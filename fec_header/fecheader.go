@@ -1,0 +1,63 @@
+package main
+
+import (
+	"fmt"
+)
+
+type FecHeader interface {
+	Marshal() []byte
+	Unmarshal(buf []byte)
+}
+
+func printHeader(buf []byte) {
+	for index, value := range buf {
+		for i := 7; i >= 0; i-- {
+			fmt.Print((value >> i) & 1)
+		}
+		fmt.Print(" ")
+		if (index+1)%4 == 0 {
+			fmt.Println()
+		}
+	}
+}
+
+
+func main() {
+	var LDheader FecHeader = newFecHeaderLD(false, true, false, false, 11, false, 127, 1234, 23432532, 345, 5, 6)
+	buf1 := LDheader.Marshal()
+
+	var resLD FecHeaderLD = FecHeaderLD{}
+	resLD.Unmarshal(buf1)
+
+	fmt.Println("LDheader\n", LDheader)
+	printHeader(buf1)
+	fmt.Println(resLD)
+
+	fmt.Println()
+	
+	// -------------------------------------------------------------------------------------------------------------------
+
+	var maskheader FecHeader = newFecHeaderFlexibleMask(false, false, false, false, 11, false, 100, 500, 435343, 487, true, 127, true, [3]uint32{213123123, 213123123, 31231231})
+	buf2 := maskheader.Marshal()
+
+	var resmask FecHeaderFlexibleMask = FecHeaderFlexibleMask{}
+	resmask.Unmarshal(buf2)
+
+	fmt.Println("Flexible mask header\n", maskheader)
+	printHeader(buf2)
+	fmt.Println(resmask)
+
+	fmt.Println()
+
+	// -------------------------------------------------------------------------------------------------------------------
+
+	var retransheader FecHeader = newFecHeaderRetransmission(true, false, false, false, 15, false, 34, 2342, 4296729, 4296729)
+	buf3 := retransheader.Marshal()
+
+	var resretrans FecHeaderRetransmission = FecHeaderRetransmission{}
+	resretrans.Unmarshal(buf3)
+
+	fmt.Println("Retransmission header\n", retransheader)
+	printHeader(buf3)
+	fmt.Println(resretrans)
+}
