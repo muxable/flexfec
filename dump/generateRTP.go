@@ -36,9 +36,10 @@ func PadPackets(srcBlock *[]rtp.Packet) {
 
 			// work like immutable entity, so replace with new slice
 			payload := make([]byte, maxSize)
-			for id, content := range (*srcBlock)[i].Payload {
-				payload[id] = content
-			}
+			// for id, content := range (*srcBlock)[i].Payload {
+			// 	payload[id] = content
+			// }
+			copy(payload, (*srcBlock)[i].Payload)
 
 			fmt.Println(payload)
 
