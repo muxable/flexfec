@@ -1,4 +1,4 @@
-package main
+package fech
 
 import (
 	"encoding/binary"
@@ -43,7 +43,7 @@ type FecHeaderFlexibleMask struct {
      :                                                               :
 */
 
-func newFecHeaderFlexibleMask(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, K1 bool, Mask1 uint16, K2 bool, Mask2 [3]uint32) FecHeader {
+func NewFecHeaderFlexibleMask(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, K1 bool, Mask1 uint16, K2 bool, Mask2 [3]uint32) FecHeader {
 	return &FecHeaderFlexibleMask{
 		R:                 R,
 		F:                 F,

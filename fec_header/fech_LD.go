@@ -1,4 +1,4 @@
-package main
+package fech
 
 import (
 	"encoding/binary"
@@ -36,7 +36,7 @@ type FecHeaderLD struct {
    :                                                               :
 */
 
-func newFecHeaderLD(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, L uint8, D uint8) FecHeader {
+func NewFecHeaderLD(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, L uint8, D uint8) FecHeader {
 	return &FecHeaderLD{
 		R:                 R,
 		F:                 F,

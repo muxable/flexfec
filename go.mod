@@ -1,4 +1,4 @@
-module test
+module flexfec
 
 go 1.18
 

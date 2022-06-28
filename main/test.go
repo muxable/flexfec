@@ -57,7 +57,7 @@ func receiver() {
 		panic(err)
 	}
 
-	for ; ; {
+	for {
 		buffer := make([]byte, mtu)
 
 		i, _, err := conn.ReadFrom(buffer)
@@ -69,7 +69,7 @@ func receiver() {
 		fmt.Println("recieved packet")
 		fmt.Println("buffer : ", buffer[:i], "\n")
 	}
-	
+
 }
 
 func main() {

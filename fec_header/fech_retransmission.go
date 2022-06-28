@@ -1,4 +1,4 @@
-package main
+package fech
 
 import (
 	"encoding/binary"
@@ -33,7 +33,7 @@ type FecHeaderRetransmission struct {
    :                                                               :
 */
 
-func newFecHeaderRetransmission(R bool, F bool, P bool, X bool, CC uint8, M bool, PayloadType uint8, SeqNumber uint16, TimeStamp uint32, SSRC uint32) FecHeader {
+func NewFecHeaderRetransmission(R bool, F bool, P bool, X bool, CC uint8, M bool, PayloadType uint8, SeqNumber uint16, TimeStamp uint32, SSRC uint32) FecHeader {
 	return &FecHeaderRetransmission{
 		R:           R,
 		F:           F,
