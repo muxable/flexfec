@@ -33,7 +33,20 @@ type Packet struct {
 	Payload     []byte
 	PaddingSize byte
 }
-
+type FecHeaderLD struct {
+	R                 bool
+	F                 bool
+	P                 bool
+	X                 bool
+	CC                uint8
+	M                 bool
+	PTRecovery        uint8
+	LengthRecovery    uint16
+	TimestampRecovery uint32
+	SN_base           uint16
+	L                 uint8
+	D                 uint8
+}
 //----------------------------------------------------------------------------
 func String(p *Packet) (out []byte){
 
@@ -103,45 +116,23 @@ func fecBitString(buf [][]byte) []byte {
 	}
 	return xor_out
 }
-func FECHeader(fecbitstring []byte) []byte {
-	size:=12
-	fecheader := make([]byte, size)
-	// 1st byte
-	// R - consider R=1
-	fecheader[0]= (1<<7)
-	// F - consider F=1
-	fecheader[0] |= (1<<6)
-	// P - from fecbitstring 3rd bit
-	fecheader[0] |= ((fecbitstring[0] >> 5)<<5)
-	// X - from fecbitstring 4th bit
-	fecheader[0] |= ((fecbitstring[0] >> 4)<<4)
-	// CC - from fecbitstring 5-8th bit
-	fecheader[0] |= uint8((fecbitstring[0] & uint8(0xF)))
 
-	// 2nd byte
-	// initial allotment of 0 byte
-	fecheader[1] = 0<<7
-	// M - from fecbitstring 1 bit
-	fecheader[1] |= ((fecbitstring[1]>>7)<<7)
-	// PT - from fecbitstring 7 bits
-	fecheader[1] |=((fecbitstring[1]<<1)>>1)
+// function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD) 
+func UnmarshalFec(buf []byte)(FecHeaderLD){
+	var fecheader FecHeaderLD
+	fecheader.R=false
+	fecheader.F=false
+	fecheader.P=(buf[0] >> 5 & 0x1) > 0
+	fecheader.X=(buf[0] >> 4 & 0x1) > 0
+	fecheader.CC = uint8((buf[0] & uint8(0xF)))
+	
+	fecheader.M = (buf[1] >> 7 & 0x1) > 0
+	fecheader.PTRecovery = buf[1] & 0x7F
 
-	// 3rd & 4th byte
-	// same as FEC bit string
-	fecheader[2] = fecbitstring[2]
-	fecheader[3] = fecbitstring[3]
-
-	// 5th to 8th byte
-	// next 32 bits of the FEC bit string are written into the TS recovery field in the FEC header
-	// TS recovery field
-	fecheader[4]=fecbitstring[4]
-	fecheader[5]=fecbitstring[5]
-	fecheader[6]=fecbitstring[6]
-	fecheader[7]=fecbitstring[7]
-
-	// lowest Sequence Number -- YET TO BE DONE
+	fecheader.LengthRecovery = binary.BigEndian.Uint16(buf[2:4])
+	fecheader.TimestampRecovery = binary.BigEndian.Uint32(buf[4:8])
+	
 	return fecheader
-
 }
 //---------------------------------------------------------------------------------------
 func main() {
@@ -211,8 +202,8 @@ func main() {
 	printHeader(fecbitstring)
 
 	fmt.Println("\nFEC header")
-	fecheader:=FECHeader(fecbitstring)
-	printHeader(fecheader)
+	fecheader:=UnmarshalFec(fecbitstring)
+	fmt.Println(fecheader)
 
 
 
