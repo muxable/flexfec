@@ -12,6 +12,10 @@ type Extension struct {
 	payload []byte
 }
 
+type FecHeader interface {
+	Marshal() []byte
+	Unmarshal(buf []byte)
+}
 // Header represents an RTP packet header
 type Header struct {
 	Version          uint8
@@ -118,7 +122,7 @@ func fecBitString(buf [][]byte) []byte {
 }
 
 // function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD) 
-func UnmarshalFec(buf []byte)(FecHeaderLD){
+func ToFecHeader(buf []byte)(FecHeaderLD){
 	var fecheader FecHeaderLD
 	fecheader.R=false
 	fecheader.F=false
@@ -135,6 +139,83 @@ func UnmarshalFec(buf []byte)(FecHeaderLD){
 	return fecheader
 }
 //---------------------------------------------------------------------------------------
+func NewFecHeaderLD(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, L uint8, D uint8) FecHeader {
+	return &FecHeaderLD{
+		R:                 R,
+		F:                 F,
+		P:                 P,
+		X:                 X,
+		M:                 M,
+		L:                 L,
+		D:                 D,
+		CC:                CC,
+		SN_base:           SN_base,
+		PTRecovery:        PTRecovery,
+		LengthRecovery:    LengthRecovery,
+		TimestampRecovery: TimestampRecovery,
+	}
+}
+
+func (fh *FecHeaderLD) Marshal() []byte {
+	// size to be detarmined later , for now for L and D variant size = 12 bytes
+	size := 12
+
+	buf := make([]byte, size)
+
+	if fh.R {
+		buf[0] = (1 << 7)
+	}
+
+	if fh.F {
+		buf[0] |= (1 << 6)
+	}
+
+	if fh.P {
+		buf[0] |= (1 << 5)
+	}
+
+	if fh.X {
+		buf[0] |= (1 << 4)
+	}
+
+	buf[0] |= fh.CC
+
+	if fh.M {
+		buf[1] = (1 << 7)
+	}
+
+	buf[1] |= (fh.PTRecovery & 0x7F)
+
+	binary.BigEndian.PutUint16(buf[2:4], fh.LengthRecovery)
+	binary.BigEndian.PutUint32(buf[4:8], fh.TimestampRecovery)
+
+	binary.BigEndian.PutUint16(buf[8:10], fh.SN_base)
+
+	buf[10] = fh.L
+	buf[11] = fh.D
+
+	return buf
+}
+
+func (fh *FecHeaderLD) Unmarshal (buf []byte) {
+	fh.R = (buf[0] >> 7 & 0x1) > 0
+	fh.F = (buf[0] >> 6 & 0x1) > 0
+	fh.P = (buf[0] >> 5 & 0x1) > 0
+	fh.X = (buf[0] >> 4 & 0x1) > 0
+	fh.CC = uint8((buf[0] & uint8(0xF)))
+	fh.M = (buf[0] >> 7 & 0x1) > 0
+
+	fh.PTRecovery = buf[1] & 0x7F
+
+	fh.LengthRecovery = binary.BigEndian.Uint16(buf[2:4])
+	fh.TimestampRecovery = binary.BigEndian.Uint32(buf[4:8])
+
+	fh.SN_base = binary.BigEndian.Uint16(buf[8:10])
+	fh.L = buf[10]
+	fh.D = buf[11]
+
+}
+// --------------------------------------------------------------------------------------
 func main() {
 	rawPkt := []byte{
 		0x90, 0xe0, 0x69, 0x8f, 0xd9, 0xc2, 0x93, 0xda, 0x1c, 0x64,
@@ -202,9 +283,25 @@ func main() {
 	printHeader(fecbitstring)
 
 	fmt.Println("\nFEC header")
-	fecheader:=UnmarshalFec(fecbitstring)
+	fecheader:=ToFecHeader(fecbitstring)
 	fmt.Println(fecheader)
 
+	fecheaderBits := fecheader.Marshal()
+
+	// resfh, _ := Unmarshal(fecheaderBits)
+	resfh:=Unmarshal(fecheaderBits)
+
+	for _, BYTE := range fecheaderBits {
+		printBits(BYTE)
+	}
+
+	fmt.Println(resfh)
 
 
 }
+
+func Unmarshal(fecheaderBits []byte) {
+	panic("unimplemented")
+}
+
+

@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 )
 // function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD) 
-func UnmarshalFec(buf []byte)(FecHeaderLD){
+func ToFecHeader(buf []byte)(FecHeaderLD){
 
 	// check: do we need to import FecHeaderLD or does it do it as they are in same package
 
