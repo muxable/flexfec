@@ -26,14 +26,11 @@ Flexible Forward Error Correction (FEC)
 │   ├── bitstring_testing.go
 │   ├── fecheader_testing.go
 │   └── rtp_to_fech_testing.go
-├── TEST.txt
 ├── todo.md
 └── util
     ├── generateRTP.go
     ├── padRTP.go
     ├── printBytes.go
     └── printRTP.go
-
-6 directories, 23 files
 
 ```
