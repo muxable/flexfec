@@ -46,7 +46,7 @@ if len(lengthofsrcBlock)!=L{
 }
 else{
 	// successful,  No error
-	fmt.Println("")
+	fmt.Println("All packets transmitted correctly")
 }
 }
 
