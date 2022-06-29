@@ -10,6 +10,8 @@ Flexible Forward Error Correction (FEC)
 ├── dump
 │   ├── bitstring.go
 │   ├── fecheader.go
+│   ├── generateRepair.go
+│   ├── recoverMissingPacket.go
 │   └── generateRTP.go
 ├── fec_header
 │   ├── fecheader.go
