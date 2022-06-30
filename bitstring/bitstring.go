@@ -30,7 +30,7 @@ func ToBitString(p *rtp.Packet) (out []byte) {
 	// 3rd & 4th bytes
 	// second 16 bits - 2 bytes - length of source packet condition not given
 	var paddingSize_int = int(p.PaddingSize)
-	var length = len(p.CSRC) + len(p.Extensions) + len(p.Payload) + paddingSize_int
+	var length = len(p.CSRC) + len(p.Extensions) + len(p.Payload)
 	out = append(out, 0, 0)
 	binary.BigEndian.PutUint16(out[2:4], uint16(length))
 
