@@ -1,10 +1,8 @@
-package main
+package recover
 
 import (
 	"flexfec/bitstring"
 	fech "flexfec/fec_header"
-	"flexfec/util"
-	"fmt"
 	"math/rand"
 
 	"github.com/pion/rtp"
@@ -12,7 +10,7 @@ import (
 
 //------------------------------------------------------------------------------------
 // 1 d - 1 row
-func generateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
+func GenerateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
 	var bitStrings [][]byte
 
 	for _, pkt := range *srcBlock {
@@ -20,7 +18,7 @@ func generateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
 	}
 
 	fecBitString := bitstring.ToFecBitString(bitStrings)
-	fecHeader, repairPayload := fech.UnmarshalFec(fecBitString)
+	fecHeader, repairPayload := fech.ToFecHeader(fecBitString)
 
 	fecHeader.SN_base = (*srcBlock)[0].Header.SequenceNumber
 	fecHeader.L = uint8(L)
@@ -47,10 +45,3 @@ func generateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
 }
 
 //------------------------------------------------------------------------------------
-
-func main() {
-	srcBlock := util.GenerateRTP(5, 1)
-	util.PadPackets(&srcBlock)
-	repairPacket := generateRepair(&srcBlock, 5, 1)
-	fmt.Println(repairPacket)
-}

@@ -1,12 +1,11 @@
 package main
 
-import(
-	"fmt"
-	"flexfec/util"
+import (
 	"flexfec/bitstring"
-	"flexfec/fec_header"
+	fech "flexfec/fec_header"
+	"flexfec/util"
+	"fmt"
 )
-
 
 func main() {
 	packets := util.GenerateRTP(5, 1)
@@ -21,7 +20,7 @@ func main() {
 
 	fecBitString := bitstring.ToFecBitString(bitStrings)
 
-	fecHeader := fech.UnmarshalFec(fecBitString)
+	fecHeader, _ := fech.ToFecHeader(fecBitString)
 
 	fmt.Println(fecHeader)
 	util.PrintBytes(fecHeader.Marshal())
