@@ -14,6 +14,10 @@ const (
 	listenPort = 6420
 	ssrc       = 5000
 	mtu        = 200
+	Red = "\033[31m"
+    Green = "\033[32m"
+    White = "\033[37m"
+	Blue = "\033[34m"
 )
 
 func sender() {
@@ -30,12 +34,9 @@ func sender() {
 	srcBlock := util.GenerateRTP(5, 1)
 	util.PadPackets(&srcBlock)
 
-	fmt.Println("Missing Packet at sender end")
+	fmt.Println(string(Red), "Missing Packet at sender end")
 	util.PrintPkt(srcBlock[2])
 	fmt.Println()
-	// bitStr := bitstring.ToBitString(&srcBlock[2])
-	// Y := binary.BigEndian.Uint16(bitStr[2:4])
-	// fmt.Println("Y should have been : ", Y)
 
 	repairPacket := recover.GenerateRepair(&srcBlock, 5, 1)
 
@@ -46,11 +47,11 @@ func sender() {
 
 	// defer conn.Close()
 
-	fmt.Println("Send src block")
+	fmt.Println(string(Green), "Send src block")
 	for i := 0; i < len(newBlock); i++ {
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 
-		fmt.Println("Sending a src packet")
+		fmt.Println(string(Green), "Sending a src packet")
 		util.PrintPkt(newBlock[i])
 		fmt.Println()
 		buf, _ := newBlock[i].Marshal()
@@ -58,7 +59,7 @@ func sender() {
 	}
 
 	// sending repair pkt
-	fmt.Println("Send repair pkt")
+	fmt.Println(string(Blue), "Send repair pkt")
 	util.PrintPkt(repairPacket)
 	fmt.Println()
 
@@ -77,49 +78,40 @@ func receiver() {
 		panic(err)
 	}
 
+	conn.SetReadDeadline(time.Now().Add(7 * time.Second))
+
 	srcBlock := []rtp.Packet{}
-
 	repairPacket := rtp.Packet{}
-
 	repairSSRC := uint32(2868272638)
 
-	start := time.Now()
 	for {
 		buffer := make([]byte, mtu)
-
 		i, _, err := conn.ReadFrom(buffer)
 
 		if err != nil {
-			panic(err)
+			break
 		}
-
-		// fmt.Println("recieved packet")
-		// fmt.Println("buffer : ", buffer[:i], "\n")
 
 		currPkt := rtp.Packet{}
 		currPkt.Unmarshal(buffer[:i])
 
 		if currPkt.SSRC == repairSSRC {
-			//
-			fmt.Println("Recieved Repair PKt")
+			fmt.Println(string(Blue), "Recieved Repair PKt")
 			util.PrintPkt(currPkt)
 			fmt.Println()
 			repairPacket = currPkt
 
 		} else {
-			fmt.Println("recieved src pkt")
+			fmt.Println(string(White), "recieved src pkt")
 			util.PrintPkt(currPkt)
 			fmt.Println()
 			srcBlock = append(srcBlock, currPkt)
 		}
 
-		if time.Since(start) > 12*time.Second {
-			break
-		}
+		
 	}
 
-	// Not RUNNING
-	fmt.Println("Recovered missing packer")
+	fmt.Println(string(Red), "Recovered missing packer")
 	recoveredPacket, _ := recover.RecoverMissingPacket(&srcBlock, repairPacket)
 	util.PrintPkt(recoveredPacket)
 }
