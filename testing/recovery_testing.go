@@ -13,9 +13,6 @@ func main() {
 	util.PadPackets(&srcBlock)
 
 	util.PrintPkt(srcBlock[2])
-	// bitStr := bitstring.ToBitString(&srcBlock[2])
-	// Y := binary.BigEndian.Uint16(bitStr[2:4])
-	// fmt.Println("Y should have been : ", Y)
 
 	// removing srcBlock[2] in new Block
 	var newBlock []rtp.Packet
