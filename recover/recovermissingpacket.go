@@ -1,23 +1,22 @@
-package main
+package recover
 
 import (
-	"fmt"
-	"flexfec/util"
-	"flexfec/recover"
 	"encoding/binary"
-	"flexfec/fec_header"
+	fech "flexfec/fec_header"
+	"fmt"
+
 	"github.com/pion/rtp"
 )
 
-func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) (rtp.Packet) {
-	SN_missing := 0; 
-	var ssrc uint32;
-	
+func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) rtp.Packet {
+	SN_missing := 0
+	var ssrc uint32
+
 	// Header recovery
 	fecBitString := repairPacket.Payload
 	fecHeaderBitString := fecBitString[:10]
 	recoveredHeader := make([]byte, 10)
-
+	var recoveredPadding byte
 	for _, pkt := range *(srcBlock) {
 		buf := make([]byte, 10)
 		pkt.Header.MarshalTo(buf)
@@ -34,7 +33,12 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 		for index, BYTE := range buf {
 			recoveredHeader[index] ^= BYTE
 		}
+		recoveredPadding ^= pkt.PaddingSize // xor of all recieved pkts
 	}
+
+	// recovery the actual padding size
+	recoveredPadding ^= fecBitString[len(fecBitString)-1]
+	// fmt.Println(recoveredPadding)
 
 	SN_missing = (SN_Sum - SN_missing)
 
@@ -50,21 +54,21 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 	recoveredPacket.Header.Marker = (recoveredHeader[1] >> 7 & 0x1) > 0
 	recoveredPacket.Header.PayloadType = (recoveredHeader[1] & 0x7F)
 	recoveredPacket.Header.SequenceNumber = uint16(SN_missing)
-	recoveredPacket.Header.Timestamp = binary.BigEndian.Uint32(recoveredHeader[4 : 8])
+	recoveredPacket.Header.Timestamp = binary.BigEndian.Uint32(recoveredHeader[4:8])
 	recoveredPacket.Header.SSRC = ssrc
+	recoveredPacket.PaddingSize = recoveredPadding
 
 	// Payload recovery
-	Y := int(binary.BigEndian.Uint16(recoveredHeader[2 : 4])) // Y -> 16 bit representation of (length - 12)
-	recoveredPayload := make([]byte, Y )
+	Y := int(binary.BigEndian.Uint16(recoveredHeader[2:4])) // Y -> 16 bit representation of (length - 12)
+	recoveredPayload := make([]byte, Y)
 
-	fecPaylodBitString := fecBitString[12 : 12 + Y]
+	fecPaylodBitString := fecBitString[12 : 12+Y]
 
 	for _, pkt := range *(srcBlock) {
-		for i:=0; i < Y; i++ {
+		for i := 0; i < Y; i++ {
 			recoveredPayload[i] ^= pkt.Payload[i]
 		}
 	}
-
 
 	for index, BYTE := range fecPaylodBitString {
 		recoveredPayload[index] ^= BYTE
@@ -72,26 +76,30 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 
 	recoveredPacket.Payload = recoveredPayload
 
+	// recoveredPaddingSize := len((*srcBlock)[0].Payload) - Y
+	// fmt.Println(recoveredPaddingSize)
 	return recoveredPacket
 }
 
 // 1d 1 row
 func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
 
+	fmt.Println("I GOT CALLED")
+
 	var fecheader fech.FecHeaderLD = fech.FecHeaderLD{}
 	fecheader.Unmarshal(repairPacket.Payload[:12])
 
 	L := int(fecheader.L)
 	SN_base := int(fecheader.SN_base)
-	SN_Sum := SN_base * L + (L * (L - 1))/2 
-	
+	SN_Sum := SN_base*L + (L*(L-1))/2
+
 	lengthofsrcBlock := len(*srcBlock)
 	if lengthofsrcBlock != L {
 		if (L - lengthofsrcBlock) > 1 {
 			// retransmission
 			fmt.Println("retransmission")
-			return rtp.Packet{}, -1;
-		} 
+			return rtp.Packet{}, -1
+		}
 		// recovery
 		return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
 	}
@@ -99,26 +107,4 @@ func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.
 	// successful,  No error
 	fmt.Println("All packets transmitted correctly")
 	return rtp.Packet{}, 1
-}
-
-
-func main() {
-	srcBlock := util.GenerateRTP(5, 1)	
-	util.PadPackets(&srcBlock)
-
-	util.PrintPkt(srcBlock[2])
-	// bitStr := bitstring.ToBitString(&srcBlock[2])
-	// Y := binary.BigEndian.Uint16(bitStr[2:4])
-	// fmt.Println("Y should have been : ", Y)
-
-	// removing srcBlock[2] in new Block
-	var newBlock []rtp.Packet
-	newBlock = append(newBlock, srcBlock[:2]...)
-	newBlock = append(newBlock, srcBlock[3:]...)
-
-	fmt.Println()
-
-	repairPacket := recover.GenerateRepair(&srcBlock, 5, 1)
-	recoveredPacket, _ := RecoverMissingPacket(&newBlock, repairPacket)
-	util.PrintPkt(recoveredPacket)
 }

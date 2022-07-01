@@ -11,6 +11,8 @@ import (
 //------------------------------------------------------------------------------------
 // 1 d - 1 row
 func GenerateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
+	// ASSUME ITS PADDED
+
 	var bitStrings [][]byte
 
 	for _, pkt := range *srcBlock {
@@ -24,8 +26,9 @@ func GenerateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
 	fecHeader.L = uint8(L)
 	fecHeader.D = uint8(D)
 
-	SN_base := uint16(rand.Intn(65535 - 5))
-	ssrc := uint32(rand.Intn(4294967296))
+	// assume L = 5
+	SN_base := uint16(rand.Intn(65535 - L))
+	ssrc := uint32(2868272638)
 
 	repairPacket := rtp.Packet{
 		Header: rtp.Header{
