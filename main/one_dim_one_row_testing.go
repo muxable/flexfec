@@ -14,10 +14,10 @@ const (
 	listenPort = 6420
 	ssrc       = 5000
 	mtu        = 200
-	Red = "\033[31m"
-    Green = "\033[32m"
-    White = "\033[37m"
-	Blue = "\033[34m"
+	Red        = "\033[31m"
+	Green      = "\033[32m"
+	White      = "\033[37m"
+	Blue       = "\033[34m"
 )
 
 func sender() {
@@ -108,7 +108,6 @@ func receiver() {
 			srcBlock = append(srcBlock, currPkt)
 		}
 
-		
 	}
 
 	fmt.Println(string(Red), "Recovered missing packer")
