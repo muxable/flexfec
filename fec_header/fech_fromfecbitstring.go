@@ -5,6 +5,23 @@ import (
 	"errors"
 )
 func ToFecHeaderLD(buf []byte)(FecHeaderLD, []byte){
+	
+/*
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |0|1|P|X|  CC   |M| PT recovery |         length recovery       |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          TS recovery                          |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |           SN base_i           |  L (columns)  |    D (rows)   |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |    ... next SN base and L/D for CSRC_i in CSRC list ...       |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   :               Repair "Payload" follows FEC Header             :
+   :                                                               :
+*/
+	
 	var fecheader FecHeaderLD
 	// first 2 bits are neglected in FEC bit string and replaced by R and F
 	fecheader.R = false
@@ -23,7 +40,47 @@ func ToFecHeaderLD(buf []byte)(FecHeaderLD, []byte){
 	// Check: SN_base, L, D
 	return fecheader, buf[8:]
 }
-func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderRetransmission, []byte){
+// -------------------------------------------------------------------------
+func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderFlexibleMask, []byte){
+	
+/*
+ 	0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |0|0|P|X|  CC   |M| PT recovery |        length recovery        |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                          TS recovery                          |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |           SN base_i           |k|          Mask [0-14]        |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |k|                   Mask [15-45] (optional)                   |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                     Mask [46-109] (optional)                  |
+     |                                                               |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |   ... next SN base and Mask for CSRC_i in CSRC list ...       |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     :               Repair "Payload" follows FEC Header             :
+     :                                                               :
+*/
+
+}
+// -----------------------------------------------------------------------------
+func ToFecHeaderRetransmission(buf []byte)(FecHeaderRetransmission, []byte){
+	
+/*
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |1|0|P|X|  CC   |M| Payload Type|        Sequence Number        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                           Timestamp                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                              SSRC                             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   :          Retransmission "Payload" follows FEC Header          :
+   :                                                               :
+*/
 	var fecheader FecHeaderRetransmission
 	fecheader.R = true
 	fecheader.F = false
@@ -40,10 +97,7 @@ func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderRetransmission, []byte){
 
 	return fecheader,buf[8:]
 }
-func ToFecHeaderRetransmission(buf []byte)(FecHeaderLD, []byte){
-	
-}
-
+// ----------------------------------------------------------------------------------------
 // function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD)
 func ToFecHeader(buf []byte, fecvarient string) (FecHeader, []byte, err) {
 
