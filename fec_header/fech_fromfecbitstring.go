@@ -2,13 +2,9 @@ package fech
 
 import (
 	"encoding/binary"
+	"errors"
 )
-
-// function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD)
-func ToFecHeader(buf []byte) (FecHeaderLD, []byte) {
-
-	// check: do we need to import FecHeaderLD or does it do it as they are in same package
-
+func ToFecHeaderLD(buf []byte)(FecHeaderLD, []byte){
 	var fecheader FecHeaderLD
 	// first 2 bits are neglected in FEC bit string and replaced by R and F
 	fecheader.R = false
@@ -26,6 +22,32 @@ func ToFecHeader(buf []byte) (FecHeaderLD, []byte) {
 
 	// Check: SN_base, L, D
 	return fecheader, buf[8:]
+}
+func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderLD, []byte){
+
+}
+func ToFecHeaderRetransmission(buf []byte)(FecHeaderLD, []byte){
+	
+}
+// function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD)
+func ToFecHeader(buf []byte, fecvarient string) (FecHeader, []byte, err) {
+
+	// check: do we need to import FecHeaderLD or does it do it as they are in same package
+
+	// L D
+	// flexible mask
+	// retransmission
+	if(fecvarient=="LD"){
+		return ToFecHeaderLD(buf),nil;
+	}
+	if(fecvarient=="flexible mask"){
+		return ToFecHeaderFlexibleMask(buf),nil;
+	}
+	if(fecvarient=="retransmission"){
+		return ToFecHeaderRetransmission(buf),nil;
+	}
+	return nil,nil,errors.New("empty name")
+
 }
 
 // --------------------------------------------------------------------
