@@ -4,37 +4,43 @@ Flexible Forward Error Correction (FEC)
 ## Current Repository Structure
 ```
 .
-├── bitstring
-│   ├── bitstring.go
-│   └── fecbitstring.go
-├── dump
-│   ├── bitstring.go
-│   ├── fecheader.go
-│   ├── generateRepair.go
-│   ├── recoverMissingPacket.go
-│   ├── repair.go
-│   └── generateRTP.go
-├── fec_header
-│   ├── fecheader.go
-│   ├── fech_flexiblemask.go
-│   ├── fech_fromfecbitstring.go
-│   ├── fech_LD.go
-│   └── fech_retransmission.go
-├── go.mod
-├── go.sum
-├── main
-│   └── test.go
-├── README.md
-├── testing
-│   ├── bitstring_testing.go
-│   ├── fecheader_testing.go
-│   └── rtp_to_fech_testing.go
-├── todo.md
-└── util
-    ├── generateRTP.go
-    ├── padRTP.go
-    ├── printBytes.go
-    └── printRTP.go
+└── flexfec
+    ├── bitstring
+    │   ├── bitstring.go
+    │   └── fecbitstring.go
+    ├── dump
+    │   ├── 1d_1row_fec.png
+    │   ├── bitstring.go
+    │   └── fecheader.go
+    ├── fec_header
+    │   ├── fecheader.go
+    │   ├── fech_flexiblemask.go
+    │   ├── fech_fromfecbitstring.go
+    │   ├── fech_LD.go
+    │   └── fech_retransmission.go
+    ├── flex-fec-flow.pdf
+    ├── go.mod
+    ├── go.sum
+    ├── main
+    │   ├── one_dim_one_row_testing.go
+    │   └── test.go
+    ├── README.md
+    ├── recover
+    │   ├── generate_repair.go
+    │   └── recovermissingpacket.go
+    ├── testing
+    │   ├── bitstring_testing.go
+    │   ├── fecheader_testing.go
+    │   ├── one_dim_one_row_testing.go
+    │   ├── recovery_testing.go
+    │   └── rtp_to_fech_testing.go
+    ├── todo.md
+    └── util
+        ├── generateRTP.go
+        ├── padRTP.go
+        ├── printBytes.go
+        └── printRTP.go
+
 
 ```
 
