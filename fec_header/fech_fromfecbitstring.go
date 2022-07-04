@@ -23,30 +23,47 @@ func ToFecHeaderLD(buf []byte)(FecHeaderLD, []byte){
 	// Check: SN_base, L, D
 	return fecheader, buf[8:]
 }
-func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderLD, []byte){
+func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderRetransmission, []byte){
+	var fecheader FecHeaderRetransmission
+	fecheader.R = true
+	fecheader.F = false
+	fecheader.P = (buf[0] >> 5 & 0x1) > 0
+	fecheader.X = (buf[0] >> 4 & 0x1) > 0
+	fecheader.CC = uint8((buf[0] & uint8(0xF)))
 
+	fecheader.M = (buf[1] >> 7 & 0x1) > 0
+	fecheader.PayloadType=buf[1] & 0x7F
+
+	fecheader.SeqNumber=binary.BigEndian.Uint16(buf[2:4])
+
+	fecheader.TimeStamp=binary.BigEndian.Uint32(buf[4:8])
+
+	return fecheader,buf[8:]
 }
 func ToFecHeaderRetransmission(buf []byte)(FecHeaderLD, []byte){
 	
 }
+
 // function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD)
 func ToFecHeader(buf []byte, fecvarient string) (FecHeader, []byte, err) {
 
-	// check: do we need to import FecHeaderLD or does it do it as they are in same package
-
-	// L D
-	// flexible mask
-	// retransmission
+	// using fecvarient to check 
+		// L D
+		// flexible mask
+		// retransmission
 	if(fecvarient=="LD"){
-		return ToFecHeaderLD(buf),nil;
+		header,body:=ToFecHeaderLD(buf)
+		return header,body,nil;
 	}
 	if(fecvarient=="flexible mask"){
-		return ToFecHeaderFlexibleMask(buf),nil;
+		header,body:=ToFecHeaderFlexibleMask(buf)
+		return header,body,nil;
 	}
 	if(fecvarient=="retransmission"){
-		return ToFecHeaderRetransmission(buf),nil;
+		header,body:=ToFecHeaderRetransmission(buf)
+		return header,body,nil;
 	}
-	return nil,nil,errors.New("empty name")
+	return nil,nil,errors.New("Fec varient is not defined correctly.")
 
 }
 
