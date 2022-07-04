@@ -1,7 +1,7 @@
 # flexfec
-Flexible Forward Error Correction (FEC)
+[Flexible Forward Error Correction (FEC)](https://datatracker.ietf.org/doc/html/draft-ietf-payload-flexible-fec-scheme#section-1.1.7)
 
-## Current Repository Structure
+### Current Repository Structure
 ```
 .
 ├── bitstring
