@@ -9,25 +9,20 @@ import (
 )
 
 //---------------------------
-func SN_Missing(srcBlock *[]rtp.Packet, SN_Sum int) int {
+func SN_Missing(srcBlock *[]rtp.Packet, SN_base int, L int, D int) int {
 
 	SN_missing := 0
 	for _, pkt := range *(srcBlock) {
 		SN_missing += int(pkt.Header.SequenceNumber)
 	}
+	SN_Sum := SN_base*L + (L*(L-1))/2
 	SN_missing = (SN_Sum - SN_missing)
 	return SN_missing
 }
 
-//----------------------------
-func SN_Summation(SN_base int, L int, D int) int {
-	SN_Sum := SN_base*L + (L*(L-1))/2
-	return SN_Sum
-}
-
 //-----------------------------
-func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) rtp.Packet {
-	SN_missing := 0
+func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_missing int) rtp.Packet {
+	//SN_missing := 0
 	var ssrc uint32
 
 	// Header recovery
@@ -56,7 +51,7 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 	recoveredPadding ^= fecBitString[len(fecBitString)-1]
 	// fmt.Println(recoveredPadding)
 
-	SN_missing = SN_Missing(srcBlock, SN_Sum)
+	//SN_missing = SN_Missing(srcBlock, SN_Sum)
 
 	for index, BYTE := range fecHeaderBitString {
 		recoveredHeader[index] ^= BYTE
@@ -107,9 +102,8 @@ func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.
 
 	L := int(fecheader.L)
 	SN_base := int(fecheader.SN_base)
-
-	SN_Sum := SN_Summation(SN_base, L, 0)
-
+	//Here D=0
+	SN_missing := SN_Missing(srcBlock, SN_base, L, 0)
 	lengthofsrcBlock := len(*srcBlock)
 	if lengthofsrcBlock != L {
 		if (L - lengthofsrcBlock) > 1 {
@@ -118,7 +112,7 @@ func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.
 			return rtp.Packet{}, -1
 		}
 		// recovery
-		return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
+		return MissingPacket(srcBlock, repairPacket, SN_missing), 0
 	}
 
 	// successful,  No error
