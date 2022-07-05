@@ -20,7 +20,7 @@ func GenerateRepair(srcBlock *[]rtp.Packet, L, D int) rtp.Packet {
 	}
 
 	fecBitString := bitstring.ToFecBitString(bitStrings)
-	fecHeader, repairPayload := fech.ToFecHeader(fecBitString)
+	fecHeader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
 	fecHeader.SN_base = (*srcBlock)[0].Header.SequenceNumber
 	fecHeader.L = uint8(L)

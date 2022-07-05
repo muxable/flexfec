@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func ToFecHeaderLD(buf []byte)(FecHeaderLD, []byte){
+func ToFecHeaderLD(buf []byte) (FecHeaderLD, []byte) {
 	var fecheader FecHeaderLD
 	// first 2 bits are neglected in FEC bit string and replaced by R and F
 	fecheader.R = false
@@ -25,8 +25,7 @@ func ToFecHeaderLD(buf []byte)(FecHeaderLD, []byte){
 	return fecheader, buf[8:]
 }
 
-
-func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderFlexibleMask, []byte){
+func ToFecHeaderFlexibleMask(buf []byte) (FecHeaderFlexibleMask, []byte) {
 	var fecheader FecHeaderFlexibleMask
 	fecheader.R = false
 	fecheader.F = false
@@ -44,8 +43,7 @@ func ToFecHeaderFlexibleMask(buf []byte)(FecHeaderFlexibleMask, []byte){
 	return fecheader, buf[8:]
 }
 
-
-func ToFecHeaderRetransmission(buf []byte)(FecHeaderRetransmission, []byte){
+func ToFecHeaderRetransmission(buf []byte) (FecHeaderRetransmission, []byte) {
 	var fecheader FecHeaderRetransmission
 	fecheader.R = true
 	fecheader.F = false
@@ -63,26 +61,25 @@ func ToFecHeaderRetransmission(buf []byte)(FecHeaderRetransmission, []byte){
 	return fecheader, buf[8:]
 }
 
-
 // function to convert the FEC bit string (type []byte) to FEC header (type FecHeaderLD)
-func ToFecHeader(buf []byte, fecvarient string) (FecHeader, []byte, err) {
+func ToFecHeader(buf []byte, fecvarient string) (FecHeader, []byte, error) {
 
-	// using fecvarient to check 
-		// L D
-		// flexible mask
-		// retransmission
-	if(fecvarient == "LD"){
+	// using fecvarient to check
+	// L D
+	// flexible mask
+	// retransmission
+	if fecvarient == "LD" {
 		header, body := ToFecHeaderLD(buf)
-		return header, body, nil;
+		return &header, body, nil
 	}
-	if(fecvarient == "flexible mask"){
-		header,body := ToFecHeaderFlexibleMask(buf)
-		return header, body, nil;
+	if fecvarient == "flexible mask" {
+		header, body := ToFecHeaderFlexibleMask(buf)
+		return &header, body, nil
 	}
-	if(fecvarient == "retransmission"){
-		header,body := ToFecHeaderRetransmission(buf)
-		return header, body, nil;
+	if fecvarient == "retransmission" {
+		header, body := ToFecHeaderRetransmission(buf)
+		return &header, body, nil
 	}
-	return nil, nil, errors.New("Fec varient is not defined correctly.")
+	return nil, nil, errors.New("ec varient is not defined correctly.")
 
 }
