@@ -9,7 +9,7 @@ import (
 	"github.com/pion/rtp"
 )
 
-// // L>0, D=0
+// // L>0, D=1 (in fecheader),, call with D=1 for Col Fec and actual L(num cols)
 func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	num_packets := len(*srcBlock)
 
@@ -17,7 +17,7 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	repairMap := make(map[int][]rtp.Packet)
 
 	for i := 0; i < num_packets; i++ {
-		// row of current packet
+		// col of current packet
 		c := i % L
 
 		repairMap[(c + 1)] = append(repairMap[(c+1)], (*srcBlock)[i])
@@ -29,7 +29,7 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	seqnum := uint16(rand.Intn(65535 - L))
 
 	for col, packets := range repairMap {
-		fmt.Println("col:", col)
+		fmt.Println("Col:", col)
 
 		colBitstrings := getBlockBitstring(&packets)
 
@@ -40,7 +40,7 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 		// associate src packet col with this repair packet
 		fecheader.SN_base = packets[0].Header.SequenceNumber
 		fecheader.L = uint8(L)
-		fecheader.D = uint8(D)
+		fecheader.D = uint8(1)
 
 		repairPacket := rtp.Packet{
 			Header: rtp.Header{
