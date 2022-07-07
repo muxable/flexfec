@@ -13,16 +13,16 @@ type Key struct{
 }
 
 
-func Update(buffer map[Key]rtp.Packet, sourcePkt rtp.Packet) {
+func Update(BUFFER map[Key]rtp.Packet, sourcePkt rtp.Packet) {
 	src_seq := sourcePkt.SequenceNumber
 	key := Key{
 		sequenceNumber: src_seq,
 	}
-	buffer[key] = sourcePkt
+	BUFFER[key] = sourcePkt
 }
 
 
-func Extract(buffer map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet{
+func Extract(BUFFER map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet{
 	SN_base := binary.BigEndian.Uint16(repairPacket.Payload[8:10]) 
 	L := repairPacket.Payload[10]
 	D := repairPacket.Payload[11]
@@ -32,14 +32,14 @@ func Extract(buffer map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet{
 
 	for i := uint16(0); i < uint16(L); i++ {
 		if D == 0 {
-			_, isPresent := buffer[Key{SN_base + i}]
+			_, isPresent := BUFFER[Key{SN_base + i}]
 			if isPresent {
-				receivedBlock = append(receivedBlock, buffer[Key{SN_base + i}])
+				receivedBlock = append(receivedBlock, BUFFER[Key{SN_base + i}])
 			}
 		} else {
-			_, isPresent := buffer[Key{SN_base + i*uint16(L)}]
+			_, isPresent := BUFFER[Key{SN_base + i*uint16(L)}]
 			if isPresent {
-				receivedBlock = append(receivedBlock, buffer[Key{SN_base + i*uint16(L)}])
+				receivedBlock = append(receivedBlock, BUFFER[Key{SN_base + i*uint16(L)}])
 			}
 		}
 	}
