@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"flexfec/recover"
 	"flexfec/util"
 	"fmt"
@@ -9,27 +10,31 @@ import (
 func main() {
 
 	// sender
-	packets := util.GenerateRTP(5, 3) // L=5 and D=3
+	packets := util.GenerateRTP(4, 3) // L=4 and D=3
 	util.PadPackets(&packets)
 
 	//  L>0, D=0 Row Fec
-	/*
-		fmt.Println("Source Packets:")
-		for i := 0; i < 3; i++ {
-			fmt.Println("Row", i+1, "\n")
-			for j := 0; j < 5; j++ {
-				util.PrintPkt(packets[i*5+j])
-			}
+
+	fmt.Println("Source Packets:")
+	for i := 0; i < 3; i++ {
+		fmt.Println("Row", i+1, "\n")
+		for j := 0; j < 4; j++ {
+			util.PrintPkt(packets[i*4+j])
 		}
+	}
+	fmt.Println()
+
+	repairPacketsRow := recover.GenerateRepairRowFec(&packets, 4, 0)
+
+	fmt.Println("repair packets:")
+	for _, r_packet := range repairPacketsRow {
+		SN_base := binary.BigEndian.Uint16(r_packet.Payload[8:10])
+		fmt.Println("SNbase,L,D :", SN_base)
+
 		fmt.Println()
+		util.PrintPkt(r_packet)
 
-		repairPacketsRow := recover.GenerateRepairRowFec(&packets, 5, 0)
-
-		fmt.Println("repair packets:")
-		for _, r_packet := range repairPacketsRow {
-			util.PrintPkt(r_packet)
-		}
-	*/
+	}
 
 	// ___________________________________________________________________
 
@@ -55,16 +60,17 @@ func main() {
 	// ________________________________________________________________
 
 	// fmt.Println("Source Packets:")
+	/*
+		rowFecPackets, colFecPackets := recover.GenerateRepair2dFec(&packets, 5, 3)
 
-	rowFecPackets, colFecPackets := recover.GenerateRepair2dFec(&packets, 5, 3)
+		fmt.Println("Row repair:")
+		for _, r_packet := range rowFecPackets {
+			util.PrintPkt(r_packet)
+		}
 
-	fmt.Println("Row repair:")
-	for _, r_packet := range rowFecPackets {
-		util.PrintPkt(r_packet)
-	}
-
-	fmt.Println("Col repair:")
-	for _, c_packet := range colFecPackets {
-		util.PrintPkt(c_packet)
-	}
+		fmt.Println("Col repair:")
+		for _, c_packet := range colFecPackets {
+			util.PrintPkt(c_packet)
+		}
+	*/
 }

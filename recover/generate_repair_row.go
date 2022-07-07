@@ -3,7 +3,6 @@ package recover
 import (
 	"flexfec/bitstring"
 	fech "flexfec/fec_header"
-	"fmt"
 	"math/rand"
 
 	"github.com/pion/rtp"
@@ -28,24 +27,12 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 
 	num_packets := len(*srcBlock)
 
-	// to map a row of packets, can use mapping in repair packet construction
-	repairMap := make(map[int][]rtp.Packet)
-
-	for i := 0; i < num_packets; i++ {
-		// row of current packet
-		r := i / L
-
-		repairMap[(r + 1)] = append(repairMap[(r+1)], (*srcBlock)[i])
-	}
-
 	var repairPackets []rtp.Packet
-
-	// Construct repair packet(another rtp packet)
+	// // Construct repair packet(another rtp packet)
 	seqnum := uint16(rand.Intn(65535 - L))
 
-	for row, packets := range repairMap {
-		fmt.Println("Row:", row)
-
+	for i := 0; i < num_packets; i += L {
+		packets := (*srcBlock)[i : i+L]
 		rowBitstrings := getBlockBitstring(&packets)
 
 		fecBitString := bitstring.ToFecBitString(rowBitstrings)
@@ -53,7 +40,7 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
 		// associate src packet row with this repair packet
-		fecheader.SN_base = packets[0].Header.SequenceNumber
+		fecheader.SN_base = (*srcBlock)[i].Header.SequenceNumber
 		fecheader.L = uint8(L)
 		fecheader.D = uint8(D)
 
