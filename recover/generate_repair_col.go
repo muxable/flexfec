@@ -40,7 +40,7 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 		// associate src packet col with this repair packet
 		fecheader.SN_base = packets[0].Header.SequenceNumber
 		fecheader.L = uint8(L)
-		fecheader.D = uint8(1)
+		fecheader.D = uint8(D)
 
 		repairPacket := rtp.Packet{
 			Header: rtp.Header{

@@ -2,38 +2,74 @@
 // in case of row and col
 package main
 
-import(
-	"fmt"
-	"flexfec/util"
-	"flexfec/recover"
+import (
 	"flexfec/buffer"
+	"flexfec/recover"
+	"flexfec/util"
+	"fmt"
+
 	"github.com/pion/rtp"
 )
 
 func main() {
 	BUFFER := make(map[buffer.Key]rtp.Packet)
 
+	// Row Fec
+
 	srcBlock := util.GenerateRTP(3, 4)
 	util.PadPackets(&srcBlock)
-	repairPackets := recover.GenerateRepairRowFec(&srcBlock, 4, 0)
+	/*
+		repairPackets := recover.GenerateRepairRowFec(&srcBlock, 4, 0)
 
 
-	for i :=0; i < len(srcBlock) ; i++ {
+		for i :=0; i < len(srcBlock) ; i++ {
+			util.PrintPkt(srcBlock[i])
+			if (i + 1) % 4 == 0 {
+				fmt.Println("------------------------------------------")
+			}
+		}
+
+		// 3 X 4
+			// 0 X X 3
+			// 4 5 X 7
+			// 8 9 10 11
+
+
+		// Assume packets received
+		for i :=0; i < len(srcBlock) ; i++ {
+			if(i == 1 || i == 2 || i == 6) {
+				continue
+			}
+			buffer.Update(BUFFER, srcBlock[i])
+		}
+
+		fmt.Println(BUFFER)
+
+		// repair packets received
+		for _, pkt := range repairPackets {
+			fmt.Println("len :",len(buffer.Extract(BUFFER, pkt)))
+			util.PrintPkt(pkt)
+		}
+	*/
+
+	// Col Fec
+
+	repairPackets := recover.GenerateRepairColFec(&srcBlock, 4, 1)
+
+	for i := 0; i < len(srcBlock); i++ {
 		util.PrintPkt(srcBlock[i])
-		if (i + 1) % 4 == 0 {
+		if (i+1)%4 == 0 {
 			fmt.Println("------------------------------------------")
 		}
 	}
 
 	// 3 X 4
-		// 0 X X 3
-		// 4 5 X 7
-		// 8 9 10 11
-
-	
+	// 0 X X 3
+	// 4 5 X 7
+	// 8 9 10 11
 	// Assume packets received
-	for i :=0; i < len(srcBlock) ; i++ {
-		if(i == 1 || i == 2 || i == 6) {
+	for i := 0; i < len(srcBlock); i++ {
+		if i == 1 || i == 2 || i == 6 {
 			continue
 		}
 		buffer.Update(BUFFER, srcBlock[i])
@@ -43,9 +79,8 @@ func main() {
 
 	// repair packets received
 	for _, pkt := range repairPackets {
-		fmt.Println("len :",len(buffer.Extract(BUFFER, pkt)))
+		fmt.Println("len :", len(buffer.Extract(BUFFER, pkt)))
 		util.PrintPkt(pkt)
 	}
 
 }
-
