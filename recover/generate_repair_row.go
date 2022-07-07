@@ -4,7 +4,7 @@ import (
 	"flexfec/bitstring"
 	fech "flexfec/fec_header"
 	"math/rand"
-
+	"fmt"
 	"github.com/pion/rtp"
 )
 
@@ -32,6 +32,7 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	seqnum := uint16(rand.Intn(65535 - L))
 
 	for i := 0; i < num_packets; i += L {
+		fmt.Println("Row:", i)
 		packets := (*srcBlock)[i : i+L]
 		rowBitstrings := getBlockBitstring(&packets)
 
