@@ -15,7 +15,7 @@ func main() {
 
 	util.PadPackets(&srcBlock)
 
-	repairPacket := recover.GenerateRepair(&srcBlock, 5, 1)
+	repairPacket := recover.GenerateRepair1d1row(&srcBlock, 5, 1)
 	fmt.Println(repairPacket)
 
 	// all except one
