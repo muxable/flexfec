@@ -3,6 +3,7 @@ package main
 import (
 	"flexfec/recover"
 	"flexfec/util"
+	"flexfec/buffer"
 	"fmt"
 	"net"
 	"time"
@@ -19,6 +20,8 @@ const (
 	White      = "\033[37m"
 	Blue       = "\033[34m"
 )
+
+var buffer map[Key]rtp.Packet
 
 func sender() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))

@@ -17,6 +17,7 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 	fecHeaderBitString := fecBitString[:10]
 	recoveredHeader := make([]byte, 10)
 	var recoveredPadding byte
+	
 	for _, pkt := range *(srcBlock) {
 		buf := make([]byte, 10)
 		pkt.Header.MarshalTo(buf)
