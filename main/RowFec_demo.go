@@ -1,13 +1,12 @@
 package main
 
 import (
-	"flexfec/buffer"
-	"flexfec/recover"
-	"flexfec/util"
 	"fmt"
 	"net"
 	"time"
-
+	"flexfec/buffer"
+	"flexfec/recover"
+	"flexfec/util"
 	"github.com/pion/rtp"
 )
 
@@ -42,17 +41,6 @@ func encoder() {
 
 	repairPacketsRow := recover.GenerateRepairRowFec(&srcBlock, L, 0)
 
-	// // removing srcBlock[2] in new Block
-	// var newBlock []rtp.Packet
-
-	// for i := 0; i < len(srcBlock); i++ {
-	// 	if i == 1 || i == 2 || i == 6 {
-	// 		continue
-	// 	}
-	// 	newBlock = append(newBlock, srcBlock[i])
-	// }
-
-	// defer conn.Close()
 
 	fmt.Println(string(Green), "Send src block")
 	for i := 0; i < len(srcBlock); i++ {
@@ -123,7 +111,7 @@ func decoder() {
 			repairPacket = currPkt
 
 			associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
-
+			fmt.Println("len : ", len(associatedSrcPackets))
 			fmt.Println(string(Red), "Recovered missing packer")
 			recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
 			util.PrintPkt(recoveredPacket)

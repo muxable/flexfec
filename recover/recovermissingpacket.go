@@ -85,8 +85,6 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 // 1d 1 row
 func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
 
-	fmt.Println("I GOT CALLED")
-
 	var fecheader fech.FecHeaderLD = fech.FecHeaderLD{}
 	fecheader.Unmarshal(repairPacket.Payload[:12])
 
