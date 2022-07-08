@@ -13,13 +13,14 @@ const (
 	ssrc = uint32(2868272638)
 )
 
-func getBlockBitstring(packets *[]rtp.Packet) [][]byte {
+func getBlockBitstring(packets []rtp.Packet) [][]byte {
 	var bitStrings [][]byte
 
-	for _, pkt := range *packets {
+	for _, pkt := range packets {
 		bitStrings = append(bitStrings, bitstring.ToBitString(&pkt))
 	}
 
+	// fmt.Println(bitStrings)
 	return bitStrings
 }
 
@@ -54,9 +55,10 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int) []rtp.Packet {
 	seqnum := uint16(rand.Intn(65535 - L))
 	for i := 0; i < len(*srcBlock); i += L {
 		packets := (*srcBlock)[i : i+L]
-		rowBitstrings := getBlockBitstring(&packets)
+		rowBitstrings := getBlockBitstring(packets)
 
 		fecBitString := bitstring.ToFecBitString(rowBitstrings)
+		// fmt.Println("fecbtstr", fecBitString)
 
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
@@ -79,6 +81,8 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int) []rtp.Packet {
 			},
 			Payload: append(fecheader.Marshal(), repairPayload...),
 		}
+		// fmt.Println("repair")
+		// util.PrintPkt(repairPacket)
 
 		repairPackets = append(repairPackets, repairPacket)
 		seqnum++
@@ -100,7 +104,7 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 			packets[i] = (*srcBlock)[i*D+j]
 		}
 
-		rowBitstrings := getBlockBitstring(&packets)
+		rowBitstrings := getBlockBitstring(packets)
 
 		fecBitString := bitstring.ToFecBitString(rowBitstrings)
 
@@ -141,7 +145,7 @@ func GenerateRepair2dFec(srcBlock *[]rtp.Packet, L int) ([]rtp.Packet, []rtp.Pac
 	for i := 0; i < len(*srcBlock); i += L {
 
 		packets := (*srcBlock)[i : i+L]
-		rowBitstrings := getBlockBitstring(&packets)
+		rowBitstrings := getBlockBitstring(packets)
 
 		fecBitString := bitstring.ToFecBitString(rowBitstrings)
 
@@ -178,10 +182,9 @@ func GenerateRepair2dFec(srcBlock *[]rtp.Packet, L int) ([]rtp.Packet, []rtp.Pac
 
 	for i := 0; i < len(orderedMap); i++ {
 		packets := orderedMap[i]
-		rowBitstrings := getBlockBitstring(&packets)
+		rowBitstrings := getBlockBitstring(packets)
 
 		fecBitString := bitstring.ToFecBitString(rowBitstrings)
-
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
 		// associate src packet row with this repair packet
