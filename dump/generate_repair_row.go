@@ -23,7 +23,7 @@ func getBlockBitstring(packets *[]rtp.Packet) [][]byte {
 }
 
 // L>0, D=0 (in fecheader),, call with D=0 for Row fec and actual L(num cols)
-func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
+func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int, D int) []rtp.Packet {
 
 	num_packets := len(*srcBlock)
 
