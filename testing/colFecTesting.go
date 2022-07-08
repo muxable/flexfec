@@ -14,7 +14,7 @@ const (
 	Green = "\033[32m"
 	White = "\033[37m"
 	Blue  = "\033[34m"
-	L     = 4
+	L     = 5
 	D     = 3
 )
 
@@ -26,7 +26,7 @@ func main() {
 	srcBlock := util.GenerateRTP(L, D)
 	util.PadPackets(&srcBlock)
 
-	repairPacketsCol := recover.GenerateRepairColFec(&srcBlock, L, 1)
+	repairPacketsCol := recover.GenerateRepairColFec(&srcBlock, L, D)
 	var recievedPackets []rtp.Packet
 
 	for i := 0; i < len(srcBlock); i++ {
@@ -45,12 +45,12 @@ func main() {
 		buffer.Update(BUFFER, pkt)
 	}
 
-	for _, repairPacket := range repairPacketsRow {
+	for _, repairPacket := range repairPacketsCol {
 		associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
 		fmt.Println("num packets:", len(associatedSrcPackets))
 		fmt.Println(string(White), "recovery")
 
-		recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
+		recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, repairPacket)
 		util.PrintPkt(recoveredPacket)
 	}
 }

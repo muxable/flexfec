@@ -29,19 +29,42 @@ func Extract(BUFFER map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet {
 
 	var receivedBlock []rtp.Packet
 
-	for i := uint16(0); i < uint16(L); i++ {
-		if D == 0 {
+	/*
+		for i := uint16(0); i < uint16(L); i++ {
+			if D == 0 {
+				_, isPresent := BUFFER[Key{SN_base + i}]
+				if isPresent {
+					// fmt.Println(BUFFER[Key{SN_base + i}].Payload)
+					receivedBlock = append(receivedBlock, BUFFER[Key{SN_base + i}])
+				}
+			} else {
+				_, isPresent := BUFFER[Key{SN_base + i*uint16(L)}]
+				if isPresent {
+					receivedBlock = append(receivedBlock, BUFFER[Key{SN_base + i*uint16(L)}])
+				}
+			}
+		}
+	*/
+	if D == 0 {
+		// Row fec
+		for i := uint16(0); i < uint16(L); i++ {
 			_, isPresent := BUFFER[Key{SN_base + i}]
 			if isPresent {
 				// fmt.Println(BUFFER[Key{SN_base + i}].Payload)
 				receivedBlock = append(receivedBlock, BUFFER[Key{SN_base + i}])
 			}
-		} else {
+		}
+	} else if D > 1 {
+		// Col fec
+		for i := uint16(0); i < uint16(D); i++ {
 			_, isPresent := BUFFER[Key{SN_base + i*uint16(L)}]
 			if isPresent {
+				// fmt.Println(BUFFER[Key{SN_base + i}].Payload)
 				receivedBlock = append(receivedBlock, BUFFER[Key{SN_base + i*uint16(L)}])
 			}
 		}
+	} else {
+		// NEED TO EXTEND
 	}
 
 	return receivedBlock

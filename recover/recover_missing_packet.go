@@ -116,3 +116,55 @@ func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.
 	fmt.Println("All packets transmitted correctly")
 	return rtp.Packet{}, 1
 }
+
+func RecoverMissingPacketLD(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
+
+	var fecheader fech.FecHeaderLD = fech.FecHeaderLD{}
+	fecheader.Unmarshal(repairPacket.Payload[:12])
+
+	L := int(fecheader.L)
+	D := int(fecheader.D)
+
+	SN_base := int(fecheader.SN_base)
+
+	if D == 0 {
+		// row fec
+		SN_Sum := SN_base*L + (L*(L-1))/2
+
+		lengthofsrcBlock := len(*srcBlock)
+		if lengthofsrcBlock != L {
+			if (L - lengthofsrcBlock) > 1 {
+				// retransmission
+				fmt.Println("retransmission")
+				//
+				return rtp.Packet{}, -1
+			}
+			// recovery
+			return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
+		}
+		// successful,  No error
+		fmt.Println("All packets transmitted correctly")
+		return rtp.Packet{}, 1
+	} else if D > 1 {
+		// Col fec
+		SN_Sum := D / 2 * (2*SN_base + (D-1)*L) // Arithematic progression
+
+		lengthofsrcBlock := len(*srcBlock)
+
+		if lengthofsrcBlock != D {
+			if (D - lengthofsrcBlock) > 1 {
+				// retransmission
+				fmt.Println("retransmission")
+				//
+				return rtp.Packet{}, -1
+			}
+			// recovery
+			return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
+		}
+		// successful,  No error
+		fmt.Println("All packets transmitted correctly")
+		return rtp.Packet{}, 1
+	}
+
+	return rtp.Packet{}, 3
+}
