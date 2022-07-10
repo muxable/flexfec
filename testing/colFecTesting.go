@@ -50,7 +50,7 @@ func main() {
 		fmt.Println("num packets:", len(associatedSrcPackets))
 		fmt.Println(string(White), "recovery")
 
-		recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, repairPacket)
+		recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
 		util.PrintPkt(recoveredPacket)
 	}
 }

@@ -101,7 +101,8 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	packets := make([]rtp.Packet, D)
 	for j := 0; j < L; j++ {
 		for i := 0; i < D; i++ {
-			packets[i] = (*srcBlock)[i*D+j]
+			// packets[i] = (*srcBlock)[i*D+j]
+			packets[i] = (*srcBlock)[i*L+j]
 		}
 
 		rowBitstrings := getBlockBitstring(packets)

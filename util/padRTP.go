@@ -19,15 +19,18 @@ func PadPackets(srcBlock *[]rtp.Packet) {
 		size := len((*srcBlock)[i].Payload)
 
 		if size < maxSize {
-			leftOverPadBytes := maxSize - size
+			leftOverPadBytes := uint8(maxSize - size)
 
-			(*srcBlock)[i].PaddingSize = uint8(leftOverPadBytes + 1)
+			// (*srcBlock)[i].PaddingSize = uint8(leftOverPadBytes + 1)
+			(*srcBlock)[i].PaddingSize = leftOverPadBytes
 
 			// work like immutable entity, so replace with new slice
 			payload := make([]byte, maxSize)
 			copy(payload, (*srcBlock)[i].Payload)
 
 			(*srcBlock)[i].Payload = payload
+		} else {
+			(*srcBlock)[i].Padding = false
 		}
 	}
 

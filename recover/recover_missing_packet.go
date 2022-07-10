@@ -8,29 +8,31 @@ import (
 	"github.com/pion/rtp"
 )
 
-func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) rtp.Packet {
+func SN_Missing(receivedBlock *[]rtp.Packet, SN_Sum int) int {
 	SN_missing := 0
+
+	for _, pkt := range *(receivedBlock) {
+		SN_missing += int(pkt.Header.SequenceNumber)
+	}
+
+	return SN_Sum - SN_missing
+}
+
+func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_missing int) rtp.Packet {
 	var ssrc uint32
 
 	// Header recovery
 	fecBitString := repairPacket.Payload
-	// fmt.Println("fecBitstring\n", fecBitString)
-	fecHeaderBitString := fecBitString[:10]
-	recoveredHeader := make([]byte, 10)
+	fecHeaderBitString := fecBitString[:8]
+
+	recoveredHeader := make([]byte, 8)
 	var recoveredPadding byte
 
-	for _, pkt := range *(srcBlock) {
-		buf := make([]byte, 10)
-		pkt.Header.MarshalTo(buf)
-
-		length := len(pkt.Payload)
-		buf[8] = uint8(0)
-		buf[7] = uint8(0)
-		binary.BigEndian.PutUint16(buf[8:10], uint16(length))
+	for _, pkt := range *(receivedBlock) {
+		buf, _ := pkt.Header.Marshal()
+		buf = buf[:8]
 
 		ssrc = pkt.Header.SSRC
-
-		SN_missing += int(pkt.Header.SequenceNumber)
 
 		for index, BYTE := range buf {
 			recoveredHeader[index] ^= BYTE
@@ -38,11 +40,7 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 		recoveredPadding ^= pkt.PaddingSize // xor of all recieved pkts
 	}
 
-	// recovery the actual padding size
 	recoveredPadding ^= fecBitString[len(fecBitString)-1]
-	// fmt.Println(recoveredPadding)
-
-	SN_missing = (SN_Sum - SN_missing)
 
 	for index, BYTE := range fecHeaderBitString {
 		recoveredHeader[index] ^= BYTE
@@ -58,58 +56,62 @@ func MissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_Sum int) 
 	recoveredPacket.Header.SequenceNumber = uint16(SN_missing)
 	recoveredPacket.Header.Timestamp = binary.BigEndian.Uint32(recoveredHeader[4:8])
 	recoveredPacket.Header.SSRC = ssrc
-	recoveredPacket.PaddingSize = recoveredPadding
+	recoveredPacket.PaddingSize = 0
 
 	// Payload recovery
-	Y := int(binary.BigEndian.Uint16(recoveredHeader[2:4])) // Y -> 16 bit representation of (length - 12)
-	// fmt.Println("Y:", Y)
-	recoveredPayload := make([]byte, Y)
+	pkt := (*receivedBlock)[0]
+	length := len(pkt.Payload) + len(pkt.CSRC) + len(pkt.Extensions)
 
-	fecPaylodBitString := fecBitString[12 : 12+Y]
+	recoveredPayload := make([]byte, length)
+	fecPaylodBitString := fecBitString[12 : 12+length]
 
-	for _, pkt := range *(srcBlock) {
-		for i := 0; i < Y; i++ {
+	for _, pkt := range *(receivedBlock) {
+		for i := 0; i < length; i++ {
 			recoveredPayload[i] ^= pkt.Payload[i]
 		}
 	}
-	// fmt.Println("before last parity")
-	// fmt.Println(recoveredPayload)
-	// fmt.Println(fecPaylodBitString)
-	// fmt.Println()
+	
 	for index, BYTE := range fecPaylodBitString {
 		recoveredPayload[index] ^= BYTE
 	}
 
-	// fmt.Println("recovered payload", recoveredPayload)
-	// recoveredPacket.Payload = append(recoveredPacket.Payload, recoveredPayload...)
-	recoveredPacket.Payload = make([]byte, Y)
+	recoveredPacket.Payload = make([]byte, length - int(recoveredPadding))
 	copy(recoveredPacket.Payload, recoveredPayload)
 
-	// recoveredPaddingSize := len((*srcBlock)[0].Payload) - Y
-	// fmt.Println(recoveredPaddingSize)
 	return recoveredPacket
 }
 
 // 1d 1 row
-func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
+func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
 
 	var fecheader fech.FecHeaderLD = fech.FecHeaderLD{}
 	fecheader.Unmarshal(repairPacket.Payload[:12])
 
-	L := int(fecheader.L)
 	SN_base := int(fecheader.SN_base)
-	SN_Sum := SN_base*L + (L*(L-1))/2
+	L := int(fecheader.L)
+	D := int(fecheader.D)
 
-	lengthofsrcBlock := len(*srcBlock)
-	if lengthofsrcBlock != L {
-		if (L - lengthofsrcBlock) > 1 {
-			// retransmission
-			fmt.Println("retransmission")
-			//
+	var SN_Sum int // sum of sequence numbers of row or col
+	var length int // expected length of row or col
+
+	if D == 0 { // row fec
+		SN_Sum = SN_base*L + (L*(L-1))/2
+		length = L
+	} else { // col fec
+		SN_Sum = (2*SN_base*D + (D-1)*L*D)/2 // Arithematic progression
+		length = D
+	}
+
+	missingSN := SN_Missing(receivedBlock, SN_Sum)
+	lenReceivedBlock := len(*receivedBlock)
+
+	if lenReceivedBlock < length {
+		if (length - lenReceivedBlock) > 1 {
+			fmt.Println("retransmission required")
 			return rtp.Packet{}, -1
 		}
 		// recovery
-		return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
+		return MissingPacket(receivedBlock, repairPacket, missingSN), 0
 	}
 
 	// successful,  No error
@@ -117,54 +119,3 @@ func RecoverMissingPacket(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.
 	return rtp.Packet{}, 1
 }
 
-func RecoverMissingPacketLD(srcBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
-
-	var fecheader fech.FecHeaderLD = fech.FecHeaderLD{}
-	fecheader.Unmarshal(repairPacket.Payload[:12])
-
-	L := int(fecheader.L)
-	D := int(fecheader.D)
-
-	SN_base := int(fecheader.SN_base)
-
-	if D == 0 {
-		// row fec
-		SN_Sum := SN_base*L + (L*(L-1))/2
-
-		lengthofsrcBlock := len(*srcBlock)
-		if lengthofsrcBlock != L {
-			if (L - lengthofsrcBlock) > 1 {
-				// retransmission
-				fmt.Println("retransmission")
-				//
-				return rtp.Packet{}, -1
-			}
-			// recovery
-			return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
-		}
-		// successful,  No error
-		fmt.Println("All packets transmitted correctly")
-		return rtp.Packet{}, 1
-	} else if D > 1 {
-		// Col fec
-		SN_Sum := D / 2 * (2*SN_base + (D-1)*L) // Arithematic progression
-
-		lengthofsrcBlock := len(*srcBlock)
-
-		if lengthofsrcBlock != D {
-			if (D - lengthofsrcBlock) > 1 {
-				// retransmission
-				fmt.Println("retransmission")
-				//
-				return rtp.Packet{}, -1
-			}
-			// recovery
-			return MissingPacket(srcBlock, repairPacket, SN_Sum), 0
-		}
-		// successful,  No error
-		fmt.Println("All packets transmitted correctly")
-		return rtp.Packet{}, 1
-	}
-
-	return rtp.Packet{}, 3
-}

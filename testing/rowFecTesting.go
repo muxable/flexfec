@@ -14,7 +14,7 @@ const (
 	Green = "\033[32m"
 	White = "\033[37m"
 	Blue  = "\033[34m"
-	L     = 5
+	L     = 4
 	D     = 3
 )
 
@@ -60,7 +60,7 @@ func main() {
 		// }
 		fmt.Println(string(White), "recovery")
 
-		recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, repairPacketsRow[i])
+		recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacketsRow[i])
 		util.PrintPkt(recoveredPacket)
 	}
 }
