@@ -70,12 +70,12 @@ func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_miss
 			recoveredPayload[i] ^= pkt.Payload[i]
 		}
 	}
-	
+
 	for index, BYTE := range fecPaylodBitString {
 		recoveredPayload[index] ^= BYTE
 	}
 
-	recoveredPacket.Payload = make([]byte, length - int(recoveredPadding))
+	recoveredPacket.Payload = make([]byte, length-int(recoveredPadding))
 	copy(recoveredPacket.Payload, recoveredPayload)
 
 	return recoveredPacket
@@ -98,7 +98,7 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 		SN_Sum = SN_base*L + (L*(L-1))/2
 		length = L
 	} else { // col fec
-		SN_Sum = (2*SN_base*D + (D-1)*L*D)/2 // Arithematic progression
+		SN_Sum = (2*SN_base*D + (D-1)*L*D) / 2 // Arithematic progression
 		length = D
 	}
 
@@ -118,4 +118,3 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 	fmt.Println("All packets transmitted correctly")
 	return rtp.Packet{}, 1
 }
-

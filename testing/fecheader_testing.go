@@ -32,7 +32,7 @@ func main() {
 
 	// -------------------------------------------------------------------------------------------------------------------
 
-	var maskheader fech.FecHeader = fech.NewFecHeaderFlexibleMask(false, false, false, false, 11, false, 100, 500, 435343, 487, true, 127, true, [3]uint32{213123123, 213123123, 31231231})
+	var maskheader fech.FecHeader = fech.NewFecHeaderFlexibleMask(false, false, false, false, 11, false, 100, 500, 435343, 487, true, 127, 678988, true, 9898798)
 	buf2 := maskheader.Marshal()
 
 	var resmask fech.FecHeaderFlexibleMask = fech.FecHeaderFlexibleMask{}

@@ -1,5 +1,7 @@
 package fech
 
+import "encoding/binary"
+
 type FecHeaderFlexibleMask struct {
 	R                 bool
 	F                 bool
@@ -40,23 +42,23 @@ type FecHeaderFlexibleMask struct {
      :                                                               :
 */
 
-/*
-func NewFecHeaderFlexibleMask(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, K1 bool, Mask1 uint16, K2 bool, Mask2 [3]uint32) FecHeader {
+func NewFecHeaderFlexibleMask(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, K1 bool, Mask uint16, OptionalMask1 uint32, K2 bool, OptionalMask2 uint64) FecHeader {
 	return &FecHeaderFlexibleMask{
 		R:                 R,
 		F:                 F,
 		P:                 P,
 		X:                 X,
-		M:                 M,
-		K1:                K1,
-		K2:                K2,
 		CC:                CC,
-		Mask1:             Mask1,
-		Mask2:             Mask2,
-		SN_base:           SN_base,
+		M:                 M,
 		PTRecovery:        PTRecovery,
 		LengthRecovery:    LengthRecovery,
 		TimestampRecovery: TimestampRecovery,
+		SN_base:           SN_base,
+		K1:                K1,
+		Mask:              Mask,
+		OptionalMask1:     OptionalMask1,
+		K2:                K2,
+		OptionalMask2:     OptionalMask2,
 	}
 }
 
@@ -88,24 +90,27 @@ func (ff *FecHeaderFlexibleMask) Marshal() []byte {
 		buf[1] = (1 << 7)
 	}
 
-	buf[1] |= byte((ff.PTRecovery))
+	buf[1] |= (ff.PTRecovery & 0x7F)
 
 	binary.BigEndian.PutUint16(buf[2:4], ff.LengthRecovery)
 	binary.BigEndian.PutUint32(buf[4:8], ff.TimestampRecovery)
+
 	binary.BigEndian.PutUint16(buf[8:10], ff.SN_base)
 
+	binary.BigEndian.PutUint16(buf[10:12], ff.Mask)
+
 	if ff.K1 {
-		buf[10] |= (1 << 7)
-		buf[10] |= byte(ff.Mask1 & 0x7F00)
-		buf[11] |= byte(ff.Mask1)
+
+		binary.BigEndian.PutUint32(buf[12:16], ff.OptionalMask1)
+
+		// set K1		0b10100101110001001100'
+		buf[10] |= 0x80
 	}
 
 	if ff.K2 {
-		binary.BigEndian.PutUint32(buf[12:16], ff.Mask2[0])
-		buf[12] |= (1 << 7) // set K
-
-		binary.BigEndian.PutUint32(buf[16:20], ff.Mask2[1])
-		binary.BigEndian.PutUint32(buf[20:24], ff.Mask2[2])
+		// set K2
+		buf[12] |= 0x80
+		binary.BigEndian.PutUint64(buf[16:24], ff.OptionalMask2)
 	}
 
 	return buf
@@ -123,26 +128,21 @@ func (ff *FecHeaderFlexibleMask) Unmarshal(buf []byte) {
 	ff.TimestampRecovery = binary.BigEndian.Uint32(buf[4:8])
 	ff.SN_base = binary.BigEndian.Uint16(buf[8:10])
 
+	ff.Mask = binary.BigEndian.Uint16(buf[10:12])
+	ff.Mask &= 0x7F //	unset the Most Significant bit(for k1)
 	ff.K1 = (buf[10] >> 7 & 0x1) > 0
-	if ff.K1 {
-		bitsM1 := buf[10:12]
-		bitsM1[0] &= 0x7F
-		ff.Mask1 = binary.BigEndian.Uint16(bitsM1)
-	}
-
 	ff.K2 = (buf[12] >> 7 & 0x1) > 0
 
+	if ff.K1 {
+		bitsM1 := buf[12:16]
+		bitsM1[0] &= 0x7F
+		ff.OptionalMask1 = binary.BigEndian.Uint32(bitsM1)
+	}
+
 	if ff.K2 {
-		bitsM2_1 := buf[12:16]
-		bitsM2_2 := buf[16:20]
-		bitsM2_3 := buf[20:24]
-
-		bitsM2_1[0] &= 0x7F
-
-		ff.Mask2[0] = binary.BigEndian.Uint32(bitsM2_1)
-		ff.Mask2[1] = binary.BigEndian.Uint32(bitsM2_2)
-		ff.Mask2[2] = binary.BigEndian.Uint32(bitsM2_3)
+		bitsM2 := buf[16:24]
+		ff.OptionalMask2 = binary.BigEndian.Uint64(bitsM2) // 100101110000101100101110'
 
 	}
+
 }
-*/
