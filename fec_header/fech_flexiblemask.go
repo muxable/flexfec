@@ -129,7 +129,7 @@ func (ff *FecHeaderFlexibleMask) Unmarshal(buf []byte) {
 	ff.SN_base = binary.BigEndian.Uint16(buf[8:10])
 
 	ff.Mask = binary.BigEndian.Uint16(buf[10:12])
-	ff.Mask &= 0x7F //	unset the Most Significant bit(for k1)
+	ff.Mask &= 0x7FFF //	unset the Most Significant bit(for k1)
 	ff.K1 = (buf[10] >> 7 & 0x1) > 0
 	ff.K2 = (buf[12] >> 7 & 0x1) > 0
 
