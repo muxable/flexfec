@@ -1,9 +1,5 @@
 package fech
 
-import (
-	"encoding/binary"
-)
-
 type FecHeaderFlexibleMask struct {
 	R                 bool
 	F                 bool
@@ -16,9 +12,10 @@ type FecHeaderFlexibleMask struct {
 	TimestampRecovery uint32
 	SN_base           uint16
 	K1                bool
-	Mask1             uint16 // use 15 bits
+	Mask              uint16 // tail 15 bits only
+	OptionalMask1     uint32 // tail 31 bits only
 	K2                bool
-	Mask2             [3]uint32 // use 95 bits
+	OptionalMask2     uint64 // use all bits
 }
 
 /*
@@ -43,6 +40,7 @@ type FecHeaderFlexibleMask struct {
      :                                                               :
 */
 
+/*
 func NewFecHeaderFlexibleMask(R bool, F bool, P bool, X bool, CC uint8, M bool, PTRecovery uint8, LengthRecovery uint16, TimestampRecovery uint32, SN_base uint16, K1 bool, Mask1 uint16, K2 bool, Mask2 [3]uint32) FecHeader {
 	return &FecHeaderFlexibleMask{
 		R:                 R,
@@ -147,3 +145,4 @@ func (ff *FecHeaderFlexibleMask) Unmarshal(buf []byte) {
 
 	}
 }
+*/

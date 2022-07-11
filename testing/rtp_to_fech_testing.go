@@ -20,7 +20,7 @@ func main() {
 
 	fecBitString := bitstring.ToFecBitString(bitStrings)
 
-	fecHeader, _ := fech.ToFecHeader(fecBitString)
+	fecHeader, _, _ := fech.ToFecHeader(fecBitString, "LD") // check all variants here
 
 	fmt.Println(fecHeader)
 	util.PrintBytes(fecHeader.Marshal())

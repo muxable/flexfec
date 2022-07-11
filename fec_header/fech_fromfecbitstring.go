@@ -72,14 +72,14 @@ func ToFecHeader(buf []byte, fecvarient string) (FecHeader, []byte, error) {
 		header, body := ToFecHeaderLD(buf)
 		return &header, body, nil
 	}
-	if fecvarient == "flexible mask" {
-		header, body := ToFecHeaderFlexibleMask(buf)
-		return &header, body, nil
-	}
+	// if fecvarient == "flexible mask" {
+	// 	header, body := ToFecHeaderFlexibleMask(buf)
+	// 	return &header, body, nil
+	// }
 	if fecvarient == "retransmission" {
 		header, body := ToFecHeaderRetransmission(buf)
 		return &header, body, nil
 	}
-	return nil, nil, errors.New("ec varient is not defined correctly.")
+	return &FecHeaderLD{}, nil, errors.New("ec varient is not defined correctly.")
 
 }

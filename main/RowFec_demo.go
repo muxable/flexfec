@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"net"
-	"time"
 	"flexfec/buffer"
 	"flexfec/recover"
 	"flexfec/util"
+	"fmt"
+	"net"
+	"time"
+
 	"github.com/pion/rtp"
 )
 
@@ -39,8 +40,7 @@ func encoder() {
 	srcBlock := util.GenerateRTP(L, D)
 	util.PadPackets(&srcBlock)
 
-	repairPacketsRow := recover.GenerateRepairRowFec(&srcBlock, L, 0)
-
+	repairPacketsRow := recover.GenerateRepairLD(&srcBlock, L, 0)
 
 	fmt.Println(string(Green), "Send src block")
 	for i := 0; i < len(srcBlock); i++ {

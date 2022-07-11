@@ -29,7 +29,7 @@ func main() {
 	}
 
 	//  L>0, D=0 Row Fec
-	repairPackets := recover.GenerateRepairLD(&packets, 4, 3)
+	repairPackets := recover.GenerateRepairLD(&packets, 4, 0)
 
 	fmt.Println(string(Blue), "repair packets")
 
@@ -37,4 +37,24 @@ func main() {
 		util.PrintPkt(repairPackets[i])
 	}
 
+	/*
+		fmt.Println(string(Green), "source packets")
+
+		for i := 0; i < 3; i++ {
+			fmt.Println("Row", i+1)
+			for j := 0; j < 4; j++ {
+				util.PrintPkt(packets[i*4+j])
+			}
+		}
+
+			// L>0 , D>0 Col Fec
+			//  L>0, D=0 Row Fec
+			repairPackets := recover.GenerateRepairLD(&packets, 4, 0)
+
+			fmt.Println(string(Blue), "repair packets")
+
+			for i := 0; i < len(repairPackets); i++ {
+				util.PrintPkt(repairPackets[i])
+			}
+	*/
 }
