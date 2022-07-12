@@ -13,6 +13,25 @@ const (
 	ssrc = uint32(2868272638)
 )
 
+func NewRepairPacketFlex(seqnum uint16, fecheader fech.FecHeaderFlexibleMask, repairPayload []byte) rtp.Packet {
+	repairPacket := rtp.Packet{
+		Header: rtp.Header{
+			Version:        2,
+			Padding:        true,
+			Extension:      false,
+			Marker:         false,
+			PayloadType:    15,
+			SequenceNumber: seqnum,
+			Timestamp:      54243243,
+			SSRC:           ssrc,
+			CSRC:           []uint32{},
+		},
+		Payload: append(fecheader.Marshal(), repairPayload...),
+	}
+
+	return repairPacket
+}
+
 func NewRepairPacketLD(seqnum uint16, fecheader fech.FecHeaderLD, repairPayload []byte) rtp.Packet {
 	repairPacket := rtp.Packet{
 		Header: rtp.Header{
@@ -41,6 +60,65 @@ func getBlockBitstring(packets []rtp.Packet) [][]byte {
 
 	// fmt.Println(bitStrings)
 	return bitStrings
+}
+
+func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint32, optionalMask2 uint64) rtp.Packet {
+
+	var coveredPackets []rtp.Packet
+
+	var SN_base uint16 = 0
+
+	// mandatory mask : 14 to 0
+	MSB_m := 14
+	max := 14
+	if optionalMask1 != 0 {
+		MSB_m = 45
+		max = 45
+	}
+
+	if optionalMask2 != 0 {
+		MSB_m = 109
+		max = 45
+	}
+
+	for MSB_m >= 0 {
+		is_Covered := mask & (1 << MSB_m)
+
+		if is_Covered > 0 {
+			coveredPackets = append(coveredPackets, (*srcBlock)[max-MSB_m])
+			if SN_base == 0 {
+				SN_base = (*srcBlock)[14-MSB_m].SequenceNumber
+			}
+		}
+	}
+
+	seqnum := uint16(rand.Intn(65535))
+	coveredBitstrings := getBlockBitstring(coveredPackets)
+
+	fecBitstring := bitstring.ToFecBitString(coveredBitstrings)
+
+	fecheader, repairPayload := fech.ToFecHeaderFlexibleMask(fecBitstring)
+
+	// set snbase
+	fecheader.SN_base = SN_base
+	if max == 14 {
+		fecheader.Mask = mask
+		return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
+	} else if max == 45 {
+		fecheader.Mask = mask
+		fecheader.K1 = true
+		fecheader.OptionalMask1 = optionalMask1
+		return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
+	} else {
+		//  both masks are used
+		fecheader.Mask = mask
+		fecheader.K1 = true
+		fecheader.OptionalMask1 = optionalMask1
+		fecheader.K2 = true
+		fecheader.OptionalMask2 = optionalMask2
+		return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
+	}
+
 }
 
 func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {

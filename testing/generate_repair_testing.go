@@ -16,6 +16,7 @@ const (
 func main() {
 
 	// sender
+
 	packets := util.GenerateRTP(4, 3) // L=4 and D=3
 	util.PadPackets(&packets)
 
@@ -28,8 +29,8 @@ func main() {
 		}
 	}
 
-	//  L>0, D=0 Row Fec
-	repairPackets := recover.GenerateRepairLD(&packets, 4, 0)
+	//  L>0, D>1 Col Fec
+	repairPackets := recover.GenerateRepairLD(&packets, 4, 3)
 
 	fmt.Println(string(Blue), "repair packets")
 
@@ -47,7 +48,6 @@ func main() {
 			}
 		}
 
-			// L>0 , D>0 Col Fec
 			//  L>0, D=0 Row Fec
 			repairPackets := recover.GenerateRepairLD(&packets, 4, 0)
 
@@ -57,4 +57,5 @@ func main() {
 				util.PrintPkt(repairPackets[i])
 			}
 	*/
+
 }
