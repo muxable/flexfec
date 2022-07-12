@@ -19,7 +19,8 @@ func GenerateRTP(L int, D int) []rtp.Packet {
 	size := len(pkts)
 
 	n := uint16(L * D)
-	SN_base := uint16(rand.Intn(65535 - int(n)))
+	// SN_base := uint16(rand.Intn(65535 - int(n)))
+	SN_base := uint16(10000)
 	ssrc := uint32(rand.Intn(4294967296))
 
 	packets := []rtp.Packet{}
