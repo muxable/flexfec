@@ -49,11 +49,11 @@ func ExtractMask(BUFFER map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packe
 	readMask(BUFFER, &receivedBlock, SN_base, uint64(maskheader.Mask), 14, 0)
 	
 	if maskheader.K1 {
-		readMask(BUFFER, &receivedBlock, SN_base, uint64(maskheader.OptionalMask1), 31, 15)
+		readMask(BUFFER, &receivedBlock, SN_base, uint64(maskheader.OptionalMask1), 30, 15)
 	}
 
 	if maskheader.K2 {
-		readMask(BUFFER, &receivedBlock, SN_base, maskheader.OptionalMask2, 63, 46)
+		readMask(BUFFER, &receivedBlock, SN_base, maskheader.OptionalMask2, 63, 15 + 31)
 	}
 	
 	return receivedBlock
