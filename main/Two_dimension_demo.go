@@ -2,11 +2,12 @@ package main
 
 import (
 	"flexfec/util"
+	"flexfec/buffer"
 	"flexfec/recover"
 	"net"
 	"fmt"
 	"time"
-
+	fech "flexfec/fec_header"
 	"github.com/pion/rtp"
 )
 const (
@@ -18,7 +19,11 @@ const (
 	White      = "\033[37m"
 	Blue       = "\033[34m"
 )
-func sender() {
+var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
+var BUFFER_ROW_REC map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
+
+
+func encoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
 	if err != nil {
 		panic(err)
@@ -29,7 +34,7 @@ func sender() {
 		panic(err)
 	}
 
-	// generate packets 5X3
+	// generate packets 2x2
 	srcBlock := util.GenerateRTP(2, 2);
 
 	// have check if we need to do row and column wise
@@ -74,7 +79,7 @@ func sender() {
 	}
 
 }
-func receiver() {
+func decoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
 	if err != nil {
 		panic(err)
@@ -87,7 +92,7 @@ func receiver() {
 
 	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	// --------------------------
-	srcBlock := []rtp.Packet{}
+	// srcBlock := []rtp.Packet{}
 	
 	repairPacketRows := rtp.Packet{}
 	repairPacketColumns := rtp.Packet{}
@@ -110,23 +115,44 @@ func receiver() {
 			fmt.Println(string(Blue), "Recieved Repair PKt")
 			util.PrintPkt(currPkt)
 			fmt.Println()
-			// if(row){
-			// 	// add to repairPacketRows
-			// }else{
-			// 	// add to repairPacketColumns
-			// }
-			// repairPacket = currPkt
+
+			// Unmarshal payload to get the values of L and D to seggregate row and column repair packets
+			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
+			repairheader.Unmarshal(currPkt.Payload[:12])
+			if(repairheader.D==1){
+				buffer.Update(BUFFER_ROW_REC, currPkt)
+				
+				//Check and Call for packet recovery
+				// Requires of creation oif 2d buffer for packets
+				associatedSrcPackets := buffer.Extract(BUFFER, currPkt)
+				fmt.Println("len : ", len(associatedSrcPackets))
+				fmt.Println(string(Red), "Recovered missing packer")
+				recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, currPkt)
+				util.PrintPkt(recoveredPacket)
+				
+				// Add recoveredPacket to buffer
+				buffer.Update(BUFFER, recoveredPacket)
+
+			}else{
+				repairPacketColumns=currPkt
+				// Check and Call for packet recovery
+			}
 
 		} else {
 			fmt.Println(string(White), "recieved src pkt")
 			util.PrintPkt(currPkt)
 			fmt.Println()
-			srcBlock = append(srcBlock, currPkt)
+
+			// without buffer
+			// srcBlock = append(srcBlock, currPkt)
+
+			// with buffer
+			buffer.Update(BUFFER, currPkt)
 		}
 	}
 
 }
 func main() {
-	go sender()
-	receiver()
+	go encoder()
+	decoder()
 }
