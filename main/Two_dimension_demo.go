@@ -43,14 +43,27 @@ func encoder() {
 		panic(err)
 	}
 
-	// generate packets 2x2
-	srcBlock := util.GenerateRTP(2, 2);
+	// generate packets
+	srcBlock := util.GenerateRTP(4, 3);
 
 	// have check if we need to do row and column wise
 	util.PadPackets(&srcBlock)
 
-	repairPacketsRow,repairPacketsColumns:=recover.GenerateRepair2dFec(&srcBlock,2,2)
+	repairPacketsRow,repairPacketsColumns:=recover.GenerateRepair2dFec(&srcBlock,4,3)
 
+
+	// removing srcBlock[2] in new Block
+	var newBlock []rtp.Packet
+	newBlock = append(newBlock, srcBlock[:1]...)
+	newBlock = append(newBlock, srcBlock[5:6]...)
+	newBlock = append(newBlock, srcBlock[7:8]...)
+	newBlock = append(newBlock, srcBlock[9:]...)
+
+	fmt.Println(string(Red), "Missing Packet at sender end")
+	fmt.Println(newBlock)
+	fmt.Println()
+
+	srcBlock=newBlock
 	// sending packets
 	fmt.Println(string(Green), "Send src block")
 	for i := 0; i < len(srcBlock); i++ {
@@ -99,7 +112,7 @@ func decoder() {
 		panic(err)
 	}
 
-	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(25 * time.Second))
 	
 	// --------------------------	
 	repairSSRC := uint32(2868272638)
@@ -157,11 +170,14 @@ func decoder() {
 
 			associatedSrcPackets := buffer.Extract(BUFFER, currPkt)
 			fmt.Println("Length of associatedSrcPackets:",len(associatedSrcPackets))
-			if len(associatedSrcPackets)!=0{
-				recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, currPkt)
-				// update recoveredPacket to buffer
-				buffer.Update(BUFFER, recoveredPacket)
-			}
+			
+			recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, currPkt)
+			// update recoveredPacket to buffer
+			buffer.Update(BUFFER, recoveredPacket)
+			
+			fmt.Println("col_count:",col_count)
+			fmt.Println("repairheader.L",repairheader.L)
+			
 			if col_count==repairheader.L{
 				fmt.Println("Entering Second row recovery phase-------")
 				// second round row
@@ -171,6 +187,7 @@ func decoder() {
 
 				for _,repairPacket:=range BUFFER_ROW_REC {
 					associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
+					fmt.Println("Length of associatedSrcPackets:",len(associatedSrcPackets))
 					recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
 					// update recoveredPacket to buffer
 					buffer.Update(BUFFER, recoveredPacket)
@@ -198,3 +215,10 @@ func main() {
 	go encoder()
 	decoder()
 }
+
+
+//  a  X  X  X r1 1
+//  X  f  X  h r2 2
+//  X  j  k  l r3 3
+//  c1 c2 c3 c4
+// 1	2	1	2

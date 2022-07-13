@@ -1,14 +1,17 @@
 package main
 
 import (
-	"flexfec/util"
+	"flexfec/buffer"
+	fech "flexfec/fec_header"
 	"flexfec/recover"
-	"net"
+	"flexfec/util"
 	"fmt"
+	"math"
+	"net"
 	"time"
-
 	"github.com/pion/rtp"
 )
+
 const (
 	listenPort = 6420
 	ssrc       = 5000
@@ -18,7 +21,18 @@ const (
 	White      = "\033[37m"
 	Blue       = "\033[34m"
 )
-func sender() {
+
+var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
+var BUFFER_ROW_REC map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
+
+func min(a uint16, b uint16) uint16 {
+    if a < b {
+        return a
+    }
+    return b
+}
+
+func encoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
 	if err != nil {
 		panic(err)
@@ -29,7 +43,7 @@ func sender() {
 		panic(err)
 	}
 
-	// generate packets 5X3
+	// generate packets 2x2
 	srcBlock := util.GenerateRTP(2, 2);
 
 	// have check if we need to do row and column wise
@@ -74,7 +88,7 @@ func sender() {
 	}
 
 }
-func receiver() {
+func decoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
 	if err != nil {
 		panic(err)
@@ -86,30 +100,101 @@ func receiver() {
 	}
 
 	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	// --------------------------
-	// srcBlock := []rtp.Packet{}
-	// repairPacket := rtp.Packet{}
-	// repairSSRC := uint32(2868272638)
+	
+	// --------------------------	
+	repairSSRC := uint32(2868272638)
 
 	for {
-		buffer := make([]byte, mtu)
-		i, _, err := conn.ReadFrom(buffer)
+		buf := make([]byte, mtu)
+		i, _, err := conn.ReadFrom(buf)
 
 		if err != nil {
 			break
 		}
 
 		currPkt := rtp.Packet{}
-		currPkt.Unmarshal(buffer[:i])
+		currPkt.Unmarshal(buf[:i])
+		// ---------------------------
+		// min seq number among 2d row
+		var curr_min uint16=math.MaxUint16
+		is_2d_row:=false
+		// no of 2d row packets
+		curr_count:=1
+		col_count:=uint8(0)
+		
+		if currPkt.SSRC == repairSSRC {
+			
+			fmt.Println(string(Blue), "Recieved Repair PKt")
+			util.PrintPkt(currPkt)
+			fmt.Println()
 
-		fmt.Println(string(White), "Recieved PKt")		
-		util.PrintPkt(currPkt)
-		fmt.Println()
+			// Unmarshal payload to get the values of L and D to seggregate row and column repair packets
+			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
+			repairheader.Unmarshal(currPkt.Payload[:12])
 
+			// condition for 2D
+			fmt.Println("printing D value",repairheader.D)
+			if repairheader.D==uint8(1){
+				fmt.Println("Entering the 1st phase of recovery")
+				if is_2d_row{
+					curr_count++
+					curr_min=min(curr_min,currPkt.SequenceNumber)
+
+				}else{
+					is_2d_row=true
+					curr_count=1
+					col_count=0
+					curr_min=currPkt.SequenceNumber
+				}
+				buffer.Update(BUFFER_ROW_REC, currPkt)
+
+			}else{
+				is_2d_row=false
+				col_count++
+			}
+			
+			// Repair using repair packet
+
+			associatedSrcPackets := buffer.Extract(BUFFER, currPkt)
+			fmt.Println("Length of associatedSrcPackets:",len(associatedSrcPackets))
+			if len(associatedSrcPackets)!=0{
+				recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, currPkt)
+				// update recoveredPacket to buffer
+				buffer.Update(BUFFER, recoveredPacket)
+			}
+			if col_count==repairheader.L{
+				fmt.Println("Entering Second row recovery phase-------")
+				// second round row
+				// for all pkts in EXTRACT(CURRMIN to CURRMIN + CURR_COUNT from ROW_BUFFER)
+				// reapir using repair again
+				// reset the variables
+
+				for _,repairPacket:=range BUFFER_ROW_REC {
+					associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
+					recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
+					// update recoveredPacket to buffer
+					buffer.Update(BUFFER, recoveredPacket)
+				}
+				// delete buffer
+			}
+
+		}else{
+			fmt.Println(string(White), "recieved src pkt")
+			util.PrintPkt(currPkt)
+			fmt.Println()
+
+			buffer.Update(BUFFER, currPkt)
+		}
 	}
+	fmt.Println("Printing Row recovery packets form Buffer:",BUFFER_ROW_REC)
+	BUFFER_ROW_REC =make(map[buffer.Key]rtp.Packet)
 
+	fmt.Println("Printing All the Packets form Buffer:",BUFFER)
+	// Check if retransmission is required
+	// Print or save all the packets
+	BUFFER=make(map[buffer.Key]rtp.Packet)
 }
 func main() {
-	go sender()
-	receiver()
+	go encoder()
+	decoder()
 }
