@@ -12,7 +12,7 @@ import (
 const (
 	ssrc = uint32(2868272638)
 )
-
+var seqnum uint16 = 20000
 func NewRepairPacketFlex(seqnum uint16, fecheader fech.FecHeaderFlexibleMask, repairPayload []byte) rtp.Packet {
 	repairPacket := rtp.Packet{
 		Header: rtp.Header{
@@ -129,7 +129,7 @@ func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 		return repairPackets
 
 	} else if L > 0 && D == 0 {
-		repairPackets = GenerateRepairRowFec(srcBlock, L)
+		repairPackets = GenerateRepairRowFec(srcBlock, L,false)
 		return repairPackets
 	} else if L > 0 && D == 1 {
 		rowRepairPackets, colRepairPackets := GenerateRepair2dFec(srcBlock, L, D)
@@ -147,11 +147,13 @@ func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 }
 
 // L>0 , D=0
-func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int) []rtp.Packet {
+func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int, is2D bool) []rtp.Packet {
 
 	var repairPackets []rtp.Packet
 
-	seqnum := uint16(rand.Intn(65535 - L))
+	// seqnum := uint16(rand.Intn(65535 - L))
+	
+
 	for i := 0; i < len(*srcBlock); i += L {
 		packets := (*srcBlock)[i : i+L]
 		rowBitstrings := getBlockBitstring(packets)
@@ -165,6 +167,9 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int) []rtp.Packet {
 		fecheader.SN_base = (*srcBlock)[i].Header.SequenceNumber
 		fecheader.L = uint8(L)
 		fecheader.D = uint8(0)
+		if is2D{
+			fecheader.D = uint8(1)
+		}
 
 		repairPacket := NewRepairPacketLD(seqnum, fecheader, repairPayload)
 		// fmt.Println("repair")
@@ -182,8 +187,8 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int) []rtp.Packet {
 func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	var repairPackets []rtp.Packet
 
-	seqnum := uint16(rand.Intn(65535 - L))
-
+	// seqnum := uint16(rand.Intn(65535 - L))
+	
 	packets := make([]rtp.Packet, D)
 	for j := 0; j < L; j++ {
 		for i := 0; i < D; i++ {
@@ -213,8 +218,10 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 
 func GenerateRepair2dFec(srcBlock *[]rtp.Packet, L, D int) ([]rtp.Packet, []rtp.Packet) {
 
-	rowRepairPackets := GenerateRepairRowFec(srcBlock, L)
+	is2D:=true
+	rowRepairPackets := GenerateRepairRowFec(srcBlock, L,is2D)
 	colRepairPackets := GenerateRepairColFec(srcBlock, L, D)
+	
 
 	return rowRepairPackets, colRepairPackets
 }

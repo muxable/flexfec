@@ -67,7 +67,7 @@ func Extract(BUFFER map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet {
 
 	var receivedBlock []rtp.Packet
 
-	if D == 0 {
+	if D == 0 || D==1{
 		// Row fec
 		for i := uint16(0); i < uint16(L); i++ {
 			_, isPresent := BUFFER[Key{SN_base + i}]
@@ -91,3 +91,4 @@ func Extract(BUFFER map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet {
 
 	return receivedBlock
 }
+
