@@ -51,6 +51,10 @@ func encoder() {
 
 	repairPacketsRow,repairPacketsColumns:=recover.GenerateRepair2dFec(&srcBlock,4,3)
 
+	//  a  X  X  X r1 
+	//  X  f  X  h r2 
+	//  X  j  k  l r3 
+	//  c1 c2 c3 c4
 
 	// removing srcBlock[2] in new Block
 	var newBlock []rtp.Packet
@@ -177,7 +181,7 @@ func decoder() {
 			
 			fmt.Println("col_count:",col_count)
 			fmt.Println("repairheader.L",repairheader.L)
-			
+
 			if col_count==repairheader.L{
 				fmt.Println("Entering Second row recovery phase-------")
 				// second round row
@@ -217,8 +221,3 @@ func main() {
 }
 
 
-//  a  X  X  X r1 1
-//  X  f  X  h r2 2
-//  X  j  k  l r3 3
-//  c1 c2 c3 c4
-// 1	2	1	2
