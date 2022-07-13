@@ -99,11 +99,8 @@ func decoder() {
 	}
 
 	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-	// --------------------------
-	// srcBlock := []rtp.Packet{}
 	
-	// repairPacketRows := rtp.Packet{}
-	// repairPacketColumns := rtp.Packet{}
+	// --------------------------	
 	repairSSRC := uint32(2868272638)
 
 	for {
@@ -117,7 +114,8 @@ func decoder() {
 		currPkt := rtp.Packet{}
 		currPkt.Unmarshal(buffer[:i])
 
-		curr_min:=math.MaxUint16
+		// ---------------------------
+		var curr_min uint16=math.MaxUint16
 		is_2d_row:=false
 		curr_count:=1
 		col_count:=0
@@ -128,23 +126,22 @@ func decoder() {
 			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
 			repairheader.Unmarshal(currPkt.Payload[:12])
 
-			// if condition for 2D - check if condition is correct
+			// condition for 2D
 			if repairheader.L>0 && repairheader.D==1{
 
-				// if IS_2D_ROW
 				if is_2d_row{
 					curr_count++
-					curr_min=min(curr_min,int(currPkt.SequenceNumber))
+					// check for type compatability
+					curr_min=min(curr_min,currPkt.SequenceNumber)
 
 				}else{
 					is_2d_row=true
 					curr_count=1
 					col_count=0
-					curr_min=int(currPkt.SequenceNumber)
+					curr_min=currPkt.SequenceNumber
 				}
 
 				buffer.Update(BUFFER_ROW_REC, currPkt)
-				
 
 			}else{
 				is_2d_row=false
@@ -152,16 +149,20 @@ func decoder() {
 			}
 			
 			// Repair using repair packet
-			// update to buffer
+			associatedSrcPackets := buffer.Extract(BUFFER, currPkt)
+			recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, currPkt)
+			// update recoveredPacket to buffer
+			buffer.Update(BUFFER, recoveredPacket)
 
 			if col_count==repairheader.L{
+
 				// second round row
 				// for all pkts in EXTRACT(CURRMIN to CURRMIN + CURR_COUNT from ROW_BUFFER)
 				// reapir using repair again
 				// reset the variables
 			}
 		}else{
-			
+			buffer.Update(BUFFER, currPkt)
 		}
 	}
 }
