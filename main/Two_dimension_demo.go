@@ -1,13 +1,15 @@
 package main
 
 import (
-	"flexfec/util"
 	"flexfec/buffer"
-	"flexfec/recover"
-	"net"
-	"fmt"
-	"time"
 	fech "flexfec/fec_header"
+	"flexfec/recover"
+	"flexfec/util"
+	"fmt"
+	"math"
+	"net"
+	"time"
+
 	"github.com/pion/rtp"
 )
 const (
@@ -22,6 +24,12 @@ const (
 var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 var BUFFER_ROW_REC map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 
+func min(a uint16, b uint16) uint16 {
+    if a < b {
+        return a
+    }
+    return b
+}
 
 func encoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
@@ -94,9 +102,8 @@ func decoder() {
 	// --------------------------
 	// srcBlock := []rtp.Packet{}
 	
-	repairPacketRows := rtp.Packet{}
-	repairPacketColumns := rtp.Packet{}
-
+	// repairPacketRows := rtp.Packet{}
+	// repairPacketColumns := rtp.Packet{}
 	repairSSRC := uint32(2868272638)
 
 	for {
@@ -110,52 +117,53 @@ func decoder() {
 		currPkt := rtp.Packet{}
 		currPkt.Unmarshal(buffer[:i])
 
+		curr_min:=math.MaxUint16
+		is_2d_row:=false
+		curr_count:=1
+		col_count:=0
 		
 		if currPkt.SSRC == repairSSRC {
-
-		// if condition for 2D
-			fmt.Println(string(Blue), "Recieved Repair PKt")
-			util.PrintPkt(currPkt)
-			fmt.Println()
-
+			
 			// Unmarshal payload to get the values of L and D to seggregate row and column repair packets
 			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
 			repairheader.Unmarshal(currPkt.Payload[:12])
 
-			// row repair packets
-			if(repairheader.D==1){
+			// if condition for 2D - check if condition is correct
+			if repairheader.L>0 && repairheader.D==1{
+
+				// if IS_2D_ROW
+				if is_2d_row{
+					curr_count++
+					curr_min=min(curr_min,int(currPkt.SequenceNumber))
+
+				}else{
+					is_2d_row=true
+					curr_count=1
+					col_count=0
+					curr_min=int(currPkt.SequenceNumber)
+				}
+
 				buffer.Update(BUFFER_ROW_REC, currPkt)
 				
-				//Check and Call for packet recovery
-				// Requires of creation oif 2d buffer for packets
-				associatedSrcPackets := buffer.Extract(BUFFER, currPkt)
-				fmt.Println("len : ", len(associatedSrcPackets))
-				fmt.Println(string(Red), "Recovered missing packer")
-				recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, currPkt)
-				util.PrintPkt(recoveredPacket)
-				
-				// Add recoveredPacket to buffer
-				buffer.Update(BUFFER, recoveredPacket)
-				
-			// column repair packets
+
 			}else{
-				repairPacketColumns=currPkt
-				// Check and Call for packet recovery
+				is_2d_row=false
+				col_count++
 			}
+			
+			// Repair using repair packet
+			// update to buffer
 
-		} else {
-			fmt.Println(string(White), "recieved src pkt")
-			util.PrintPkt(currPkt)
-			fmt.Println()
-
-			// without buffer
-			// srcBlock = append(srcBlock, currPkt)
-
-			// with buffer
-			buffer.Update(BUFFER, currPkt)
+			if col_count==repairheader.L{
+				// second round row
+				// for all pkts in EXTRACT(CURRMIN to CURRMIN + CURR_COUNT from ROW_BUFFER)
+				// reapir using repair again
+				// reset the variables
+			}
+		}else{
+			
 		}
 	}
-
 }
 func main() {
 	go encoder()
