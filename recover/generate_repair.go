@@ -4,7 +4,6 @@ import (
 	"flexfec/bitstring"
 	fech "flexfec/fec_header"
 	"fmt"
-	"math/rand"
 
 	"github.com/pion/rtp"
 )
@@ -12,7 +11,9 @@ import (
 const (
 	ssrc = uint32(2868272638)
 )
+
 var seqnum uint16 = 20000
+
 func NewRepairPacketFlex(seqnum uint16, fecheader fech.FecHeaderFlexibleMask, repairPayload []byte) rtp.Packet {
 	repairPacket := rtp.Packet{
 		Header: rtp.Header{
@@ -62,37 +63,43 @@ func getBlockBitstring(packets []rtp.Packet) [][]byte {
 	return bitStrings
 }
 
-func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint32, optionalMask2 uint64) rtp.Packet {
-
+func getMaskPacktets(srcBlock *[]rtp.Packet, mask uint64, bits int) []rtp.Packet {
 	var coveredPackets []rtp.Packet
-
-	var SN_base uint16 = 0
-
-	// mandatory mask : 14 to 0
-	MSB_m := 14
-	max := 14
-	if optionalMask1 != 0 {
-		MSB_m = 45
-		max = 45
-	}
-
-	if optionalMask2 != 0 {
-		MSB_m = 109
-		max = 45
-	}
-
-	for MSB_m >= 0 {
-		is_Covered := mask & (1 << MSB_m)
-
-		if is_Covered > 0 {
-			coveredPackets = append(coveredPackets, (*srcBlock)[max-MSB_m])
-			if SN_base == 0 {
-				SN_base = (*srcBlock)[14-MSB_m].SequenceNumber
-			}
+	for i := bits; i >= 0; i-- {
+		if (mask>>i)&1 == 1 {
+			index := uint16(bits - i)
+			coveredPackets = append(coveredPackets, (*srcBlock)[index])
 		}
 	}
 
-	seqnum := uint16(rand.Intn(65535))
+	return coveredPackets
+}
+
+func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint32, optionalMask2 uint64) rtp.Packet {
+
+	var coveredPackets []rtp.Packet
+	var SN_base uint16 = (*srcBlock)[0].SequenceNumber
+
+	isK1 := false
+	isK2 := false
+
+	// mandatory mask : 14 to 0
+	mandMaskPackets := getMaskPacktets(srcBlock, uint64(mask), 15)
+	coveredPackets = append(coveredPackets, mandMaskPackets...)
+
+	// optional mask1
+	if optionalMask1 != 0 {
+		isK1 = true
+		optionalMask1Packets := getMaskPacktets(srcBlock, uint64(optionalMask1), 31)
+		coveredPackets = append(coveredPackets, optionalMask1Packets...)
+	}
+
+	if optionalMask2 != 0 {
+		isK2 = true
+		optionalMask2Packets := getMaskPacktets(srcBlock, optionalMask2, 63)
+		coveredPackets = append(coveredPackets, optionalMask2Packets...)
+	}
+
 	coveredBitstrings := getBlockBitstring(coveredPackets)
 
 	fecBitstring := bitstring.ToFecBitString(coveredBitstrings)
@@ -101,24 +108,19 @@ func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint3
 
 	// set snbase
 	fecheader.SN_base = SN_base
-	if max == 14 {
-		fecheader.Mask = mask
-		return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
-	} else if max == 45 {
-		fecheader.Mask = mask
+	fecheader.Mask = mask
+
+	if isK1 {
 		fecheader.K1 = true
 		fecheader.OptionalMask1 = optionalMask1
-		return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
-	} else {
-		//  both masks are used
-		fecheader.Mask = mask
-		fecheader.K1 = true
-		fecheader.OptionalMask1 = optionalMask1
-		fecheader.K2 = true
-		fecheader.OptionalMask2 = optionalMask2
-		return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
 	}
 
+	if isK2 {
+		fecheader.K2 = true
+		fecheader.OptionalMask2 = optionalMask2
+	}
+
+	return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
 }
 
 func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
@@ -129,7 +131,7 @@ func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 		return repairPackets
 
 	} else if L > 0 && D == 0 {
-		repairPackets = GenerateRepairRowFec(srcBlock, L,false)
+		repairPackets = GenerateRepairRowFec(srcBlock, L, false)
 		return repairPackets
 	} else if L > 0 && D == 1 {
 		rowRepairPackets, colRepairPackets := GenerateRepair2dFec(srcBlock, L, D)
@@ -152,7 +154,6 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int, is2D bool) []rtp.Packet
 	var repairPackets []rtp.Packet
 
 	// seqnum := uint16(rand.Intn(65535 - L))
-	
 
 	for i := 0; i < len(*srcBlock); i += L {
 		packets := (*srcBlock)[i : i+L]
@@ -167,7 +168,7 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int, is2D bool) []rtp.Packet
 		fecheader.SN_base = (*srcBlock)[i].Header.SequenceNumber
 		fecheader.L = uint8(L)
 		fecheader.D = uint8(0)
-		if is2D{
+		if is2D {
 			fecheader.D = uint8(1)
 		}
 
@@ -188,7 +189,7 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	var repairPackets []rtp.Packet
 
 	// seqnum := uint16(rand.Intn(65535 - L))
-	
+
 	packets := make([]rtp.Packet, D)
 	for j := 0; j < L; j++ {
 		for i := 0; i < D; i++ {
@@ -218,10 +219,9 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 
 func GenerateRepair2dFec(srcBlock *[]rtp.Packet, L, D int) ([]rtp.Packet, []rtp.Packet) {
 
-	is2D:=true
-	rowRepairPackets := GenerateRepairRowFec(srcBlock, L,is2D)
+	is2D := true
+	rowRepairPackets := GenerateRepairRowFec(srcBlock, L, is2D)
 	colRepairPackets := GenerateRepairColFec(srcBlock, L, D)
-	
 
 	return rowRepairPackets, colRepairPackets
 }

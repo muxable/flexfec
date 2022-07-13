@@ -118,3 +118,60 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 	fmt.Println("All packets transmitted correctly")
 	return rtp.Packet{}, 1
 }
+
+func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
+	// recieved block consists of all marked packets only
+
+	var fecheader fech.FecHeaderFlexibleMask = fech.FecHeaderFlexibleMask{}
+
+	// will use only first 24 bits
+	fecheader.Unmarshal(repairPacket.Payload)
+	SN_base := fecheader.SN_base
+
+	SN_Sum := 0
+
+	covered_count := 0
+
+	// mandatory mask
+	for i := 15; i >= 0; i++ {
+		if (fecheader.Mask>>i)&1 == 1 {
+			covered_count++
+			SN_Sum += int(SN_base) + 14 - i + 0 //start
+		}
+	}
+
+	if fecheader.K1 {
+		for i := 31; i >= 0; i++ {
+			if (fecheader.OptionalMask1>>i)&1 == 1 {
+				covered_count++
+				SN_Sum += int(SN_base) + 31 - i + 15
+			}
+		}
+	}
+
+	if fecheader.K2 {
+		for i := 63; i >= 0; i++ {
+			if (fecheader.OptionalMask2>>i)&1 == 1 {
+				covered_count++
+				SN_Sum += int(SN_base) + 63 - i + 46 //start
+			}
+		}
+	}
+
+	missingSN := SN_Missing(receivedBlock, SN_Sum)
+	lenReceivedBlock := len(*receivedBlock)
+	if lenReceivedBlock != covered_count {
+		if (covered_count - lenReceivedBlock) > 1 {
+			fmt.Println("retransmission required")
+			return rtp.Packet{}, -1
+		}
+
+		// recovery
+
+		return MissingPacket(receivedBlock, repairPacket, missingSN), 0
+	}
+
+	// successful,  No error
+	fmt.Println("All packets transmitted correctly")
+	return rtp.Packet{}, 1
+}
