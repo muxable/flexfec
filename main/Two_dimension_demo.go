@@ -112,6 +112,8 @@ func decoder() {
 
 		
 		if currPkt.SSRC == repairSSRC {
+
+		// if condition for 2D
 			fmt.Println(string(Blue), "Recieved Repair PKt")
 			util.PrintPkt(currPkt)
 			fmt.Println()
@@ -119,6 +121,8 @@ func decoder() {
 			// Unmarshal payload to get the values of L and D to seggregate row and column repair packets
 			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
 			repairheader.Unmarshal(currPkt.Payload[:12])
+
+			// row repair packets
 			if(repairheader.D==1){
 				buffer.Update(BUFFER_ROW_REC, currPkt)
 				
@@ -132,7 +136,8 @@ func decoder() {
 				
 				// Add recoveredPacket to buffer
 				buffer.Update(BUFFER, recoveredPacket)
-
+				
+			// column repair packets
 			}else{
 				repairPacketColumns=currPkt
 				// Check and Call for packet recovery
