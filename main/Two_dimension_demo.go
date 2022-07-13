@@ -173,7 +173,7 @@ func decoder() {
 			buffer.Update(BUFFER, currPkt)
 		}
 	}
-	
+
 	// Check if retransmission is required
 	// Print or save all the packets
 }
