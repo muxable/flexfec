@@ -9,9 +9,9 @@ import (
 	"math"
 	"net"
 	"time"
-
 	"github.com/pion/rtp"
 )
+
 const (
 	listenPort = 6420
 	ssrc       = 5000
@@ -21,6 +21,7 @@ const (
 	White      = "\033[37m"
 	Blue       = "\033[34m"
 )
+
 var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 var BUFFER_ROW_REC map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 
@@ -131,7 +132,6 @@ func decoder() {
 
 				if is_2d_row{
 					curr_count++
-					// check for type compatability
 					curr_min=min(curr_min,currPkt.SequenceNumber)
 
 				}else{
@@ -160,11 +160,22 @@ func decoder() {
 				// for all pkts in EXTRACT(CURRMIN to CURRMIN + CURR_COUNT from ROW_BUFFER)
 				// reapir using repair again
 				// reset the variables
+
+				for _,repairPacket:=range BUFFER_ROW_REC {
+					associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
+					recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, repairPacket)
+					// update recoveredPacket to buffer
+					buffer.Update(BUFFER, recoveredPacket)
+				}
+
 			}
 		}else{
 			buffer.Update(BUFFER, currPkt)
 		}
 	}
+	
+	// Check if retransmission is required
+	// Print or save all the packets
 }
 func main() {
 	go encoder()
