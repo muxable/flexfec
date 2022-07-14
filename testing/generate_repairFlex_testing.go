@@ -47,7 +47,7 @@ func main() {
 	fmt.Println("II")
 
 	associatedPkts := buffer.ExtractMask(BUFFER, repairPkt)
-
+	// fmt.Println(associatedPkts)
 	fmt.Println("OO")
 	recoveredPacket, status := recover.RecoverMissingPacketFlex(&associatedPkts, repairPkt)
 
