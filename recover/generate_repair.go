@@ -63,12 +63,17 @@ func getBlockBitstring(packets []rtp.Packet) [][]byte {
 	return bitStrings
 }
 
-func getMaskPacktets(srcBlock *[]rtp.Packet, mask uint64, bits int) []rtp.Packet {
+func getMaskPacktets(srcBlock *[]rtp.Packet, mask uint64, bits int, start int) []rtp.Packet {
 	var coveredPackets []rtp.Packet
 	for i := bits; i >= 0; i-- {
+		if (len(*srcBlock) - 1) < (bits - i + start) {
+			return coveredPackets
+		}
+
 		if (mask>>i)&1 == 1 {
 			index := uint16(bits - i)
-			coveredPackets = append(coveredPackets, (*srcBlock)[index])
+
+			coveredPackets = append(coveredPackets, (*srcBlock)[index+uint16(start)])
 		}
 	}
 
@@ -84,19 +89,19 @@ func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint3
 	isK2 := false
 
 	// mandatory mask : 14 to 0
-	mandMaskPackets := getMaskPacktets(srcBlock, uint64(mask), 15)
+	mandMaskPackets := getMaskPacktets(srcBlock, uint64(mask), 14, 0)
 	coveredPackets = append(coveredPackets, mandMaskPackets...)
 
 	// optional mask1
 	if optionalMask1 != 0 {
 		isK1 = true
-		optionalMask1Packets := getMaskPacktets(srcBlock, uint64(optionalMask1), 31)
+		optionalMask1Packets := getMaskPacktets(srcBlock, uint64(optionalMask1), 30, 15)
 		coveredPackets = append(coveredPackets, optionalMask1Packets...)
 	}
 
 	if optionalMask2 != 0 {
 		isK2 = true
-		optionalMask2Packets := getMaskPacktets(srcBlock, optionalMask2, 63)
+		optionalMask2Packets := getMaskPacktets(srcBlock, optionalMask2, 63, 46)
 		coveredPackets = append(coveredPackets, optionalMask2Packets...)
 	}
 

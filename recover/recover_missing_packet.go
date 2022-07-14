@@ -95,7 +95,7 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 	var SN_Sum int // sum of sequence numbers of row or col
 	var length int // expected length of row or col
 
-	if D == 0 || D == 1{ // row fec
+	if D == 0 || D == 1 { // row fec
 		SN_Sum = SN_base*L + (L*(L-1))/2
 		length = L
 	} else { // col fec
@@ -134,7 +134,7 @@ func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Pack
 	covered_count := 0
 
 	// mandatory mask
-	for i := 15; i >= 0; i++ {
+	for i := 14; i >= 0; i-- {
 		if (fecheader.Mask>>i)&1 == 1 {
 			covered_count++
 			SN_Sum += int(SN_base) + 14 - i + 0 //start
@@ -142,16 +142,16 @@ func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Pack
 	}
 
 	if fecheader.K1 {
-		for i := 31; i >= 0; i++ {
+		for i := 30; i >= 0; i-- {
 			if (fecheader.OptionalMask1>>i)&1 == 1 {
 				covered_count++
-				SN_Sum += int(SN_base) + 31 - i + 15
+				SN_Sum += int(SN_base) + 30 - i + 15
 			}
 		}
 	}
 
 	if fecheader.K2 {
-		for i := 63; i >= 0; i++ {
+		for i := 63; i >= 0; i-- {
 			if (fecheader.OptionalMask2>>i)&1 == 1 {
 				covered_count++
 				SN_Sum += int(SN_base) + 63 - i + 46 //start
