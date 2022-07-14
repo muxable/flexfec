@@ -56,7 +56,7 @@ func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_miss
 	recoveredPacket.Header.SequenceNumber = uint16(SN_missing)
 	recoveredPacket.Header.Timestamp = binary.BigEndian.Uint32(recoveredHeader[4:8])
 	recoveredPacket.Header.SSRC = ssrc
-	recoveredPacket.PaddingSize = 0
+	recoveredPacket.PaddingSize = recoveredPadding
 
 	// Payload recovery
 	pkt := (*receivedBlock)[0]
@@ -75,8 +75,9 @@ func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_miss
 		recoveredPayload[index] ^= BYTE
 	}
 
-	recoveredPacket.Payload = make([]byte, length-int(recoveredPadding))
-	copy(recoveredPacket.Payload, recoveredPayload)
+	recoveredPacket.Payload = recoveredPayload
+	// recoveredPacket.Payload = make([]byte, length-int(recoveredPadding))
+	// copy(recoveredPacket.Payload, recoveredPayload)
 
 	return recoveredPacket
 }
@@ -94,7 +95,7 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 	var SN_Sum int // sum of sequence numbers of row or col
 	var length int // expected length of row or col
 
-	if D == 0 { // row fec
+	if D == 0 || D == 1{ // row fec
 		SN_Sum = SN_base*L + (L*(L-1))/2
 		length = L
 	} else { // col fec
