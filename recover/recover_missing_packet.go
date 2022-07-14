@@ -15,6 +15,7 @@ func SN_Missing(receivedBlock *[]rtp.Packet, SN_Sum int) int {
 		SN_missing += int(pkt.Header.SequenceNumber)
 	}
 
+	fmt.Println("SN SUN RECIEVED:", SN_missing)
 	return SN_Sum - SN_missing
 }
 
@@ -82,6 +83,70 @@ func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_miss
 	return recoveredPacket
 }
 
+func MissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_missing int) rtp.Packet {
+	var ssrc uint32
+
+	// Header recovery
+	fecBitString := repairPacket.Payload
+	fecHeaderBitString := fecBitString[:8]
+
+	recoveredHeader := make([]byte, 8)
+	var recoveredPadding byte
+
+	for _, pkt := range *(receivedBlock) {
+		buf, _ := pkt.Header.Marshal()
+		buf = buf[:8]
+
+		ssrc = pkt.Header.SSRC
+
+		for index, BYTE := range buf {
+			recoveredHeader[index] ^= BYTE
+		}
+		recoveredPadding ^= pkt.PaddingSize // xor of all recieved pkts
+	}
+
+	recoveredPadding ^= fecBitString[len(fecBitString)-1]
+
+	for index, BYTE := range fecHeaderBitString {
+		recoveredHeader[index] ^= BYTE
+	}
+
+	var recoveredPacket rtp.Packet
+
+	recoveredPacket.Header.Version = 2
+	recoveredPacket.Header.Padding = (recoveredHeader[0] >> 5 & 0x1) > 0
+	recoveredPacket.Header.Extension = (recoveredHeader[0] >> 4 & 0x1) > 0
+	recoveredPacket.Header.Marker = (recoveredHeader[1] >> 7 & 0x1) > 0
+	recoveredPacket.Header.PayloadType = (recoveredHeader[1] & 0x7F)
+	recoveredPacket.Header.SequenceNumber = uint16(SN_missing)
+	recoveredPacket.Header.Timestamp = binary.BigEndian.Uint32(recoveredHeader[4:8])
+	recoveredPacket.Header.SSRC = ssrc
+	recoveredPacket.PaddingSize = recoveredPadding
+
+	// Payload recovery
+	pkt := (*receivedBlock)[0]
+	length := len(pkt.Payload) + len(pkt.CSRC) + len(pkt.Extensions)
+
+	recoveredPayload := make([]byte, length)
+	fecPaylodBitString := fecBitString[24 : 24+length]
+
+	for _, pkt := range *(receivedBlock) {
+		for i := 0; i < length; i++ {
+			recoveredPayload[i] ^= pkt.Payload[i]
+		}
+	}
+
+	for index, BYTE := range fecPaylodBitString {
+		recoveredPayload[index] ^= BYTE
+	}
+
+	recoveredPacket.Payload = recoveredPayload
+	// recoveredPacket.Payload = make([]byte, length-int(recoveredPadding))
+	// copy(recoveredPacket.Payload, recoveredPayload)
+
+	return recoveredPacket
+}
+
 // 1d 1 row
 func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
 
@@ -122,11 +187,15 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 
 func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) (rtp.Packet, int) {
 	// recieved block consists of all marked packets only
-
+	payload := repairPacket.Payload
 	var fecheader fech.FecHeaderFlexibleMask = fech.FecHeaderFlexibleMask{}
 
 	// will use only first 24 bits
-	fecheader.Unmarshal(repairPacket.Payload)
+	fecheader.Unmarshal(payload)
+
+	fmt.Println("UNMARSHALED")
+	fmt.Println("K1:", fecheader.K1, "K2:", fecheader.K2)
+
 	SN_base := fecheader.SN_base
 
 	SN_Sum := 0
@@ -137,7 +206,8 @@ func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Pack
 	for i := 14; i >= 0; i-- {
 		if (fecheader.Mask>>i)&1 == 1 {
 			covered_count++
-			SN_Sum += int(SN_base) + 14 - i + 0 //start
+			fmt.Println(int(SN_base) + 14 - i + 0)
+			SN_Sum += (int(SN_base) + 14 - i + 0) //start
 		}
 	}
 
@@ -145,21 +215,30 @@ func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Pack
 		for i := 30; i >= 0; i-- {
 			if (fecheader.OptionalMask1>>i)&1 == 1 {
 				covered_count++
-				SN_Sum += int(SN_base) + 30 - i + 15
+				fmt.Println(int(SN_base) + 30 - i + 15)
+
+				SN_Sum += (int(SN_base) + 30 - i + 15)
 			}
 		}
 	}
 
 	if fecheader.K2 {
+		fmt.Println("SAD")
 		for i := 63; i >= 0; i-- {
 			if (fecheader.OptionalMask2>>i)&1 == 1 {
 				covered_count++
-				SN_Sum += int(SN_base) + 63 - i + 46 //start
+
+				fmt.Println(int(SN_base) + 63 - i + 46)
+
+				SN_Sum += (int(SN_base) + 63 - i + 46) //start
 			}
 		}
 	}
 
-	missingSN := SN_Missing(receivedBlock, SN_Sum)
+	fmt.Println("SN base:", int(SN_base))
+	fmt.Println("SN sum:", int(SN_Sum))
+	missingSN := SN_Missing(receivedBlock, int(SN_Sum))
+	fmt.Println("missing SN:", missingSN)
 	lenReceivedBlock := len(*receivedBlock)
 	if lenReceivedBlock != covered_count {
 		if (covered_count - lenReceivedBlock) > 1 {
@@ -169,7 +248,7 @@ func RecoverMissingPacketFlex(receivedBlock *[]rtp.Packet, repairPacket rtp.Pack
 
 		// recovery
 
-		return MissingPacket(receivedBlock, repairPacket, missingSN), 0
+		return MissingPacketFlex(receivedBlock, repairPacket, missingSN), 0
 	}
 
 	// successful,  No error
