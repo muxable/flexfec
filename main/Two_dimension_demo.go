@@ -159,9 +159,9 @@ func decoder() {
 			// Repair using repair packet
 			associatedSrcPackets := buffer.Extract(BUFFER, currPkt)
 			recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, currPkt)
-			buffer.Update(BUFFER, recoveredPacket) // update recoveredPacket to buffer
-			
+		
 			if status == 0 {
+				buffer.Update(BUFFER, recoveredPacket) // update recoveredPacket to buffer
 				fmt.Println(string(Red), "*** Recovered Packet ***")
 				util.PrintPkt(recoveredPacket)
 			}
@@ -181,9 +181,9 @@ func decoder() {
 				for _,repairPacket:=range BUFFER_ROW_REC {
 					associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
 					recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
-					buffer.Update(BUFFER, recoveredPacket) // update recoveredPacket to buffer
 
 					if status == 0 {
+						buffer.Update(BUFFER, recoveredPacket) // update recoveredPacket to buffer
 						fmt.Println(string(Red), "*** Recovered Packet ***")
 						util.PrintPkt(recoveredPacket)
 					}
