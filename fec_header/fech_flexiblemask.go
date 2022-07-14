@@ -2,7 +2,6 @@ package fech
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 type FecHeaderFlexibleMask struct {
@@ -103,17 +102,11 @@ func (ff *FecHeaderFlexibleMask) Marshal() []byte {
 	binary.BigEndian.PutUint16(buf[10:12], ff.Mask)
 
 	if ff.K1 {
-
 		binary.BigEndian.PutUint32(buf[12:16], ff.OptionalMask1)
-
-		// set K1		0b10100101110001001100'
-		buf[10] |= 0x80
 	}
 
 	if ff.K2 {
 		binary.BigEndian.PutUint64(buf[16:24], ff.OptionalMask2)
-		// set K2
-		buf[12] |= 0x80
 	}
 
 	return buf
@@ -132,21 +125,17 @@ func (ff *FecHeaderFlexibleMask) Unmarshal(buf []byte) {
 	ff.SN_base = binary.BigEndian.Uint16(buf[8:10])
 
 	ff.Mask = binary.BigEndian.Uint16(buf[10:12])
-	ff.Mask &= 0x7FFF //	unset the Most Significant bit(for k1)
-
 	ff.K1 = (buf[10] >> 7 & 0x1) > 0
 	ff.K2 = (buf[12] >> 7 & 0x1) > 0
-	fmt.Println("IN un:", ff.K1, ff.K2)
+	
 	if ff.K1 {
 		bitsM1 := buf[12:16]
-		bitsM1[0] &= 0x7F
 		ff.OptionalMask1 = binary.BigEndian.Uint32(bitsM1)
 	}
 
 	if ff.K2 {
 		bitsM2 := buf[16:24]
-		ff.OptionalMask2 = binary.BigEndian.Uint64(bitsM2) // 100101110000101100101110'
-
+		ff.OptionalMask2 = binary.BigEndian.Uint64(bitsM2)
 	}
 
 }

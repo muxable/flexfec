@@ -59,7 +59,6 @@ func getBlockBitstring(packets []rtp.Packet) [][]byte {
 		bitStrings = append(bitStrings, bitstring.ToBitString(&pkt))
 	}
 
-	// fmt.Println(bitStrings)
 	return bitStrings
 }
 
@@ -73,7 +72,6 @@ func getMaskPacktets(srcBlock *[]rtp.Packet, mask uint64, bits int, start int) [
 
 		if (mask>>i)&1 == 1 {
 			index := uint16(bits - i)
-
 			coveredPackets = append(coveredPackets, (*srcBlock)[index+uint16(start)])
 		}
 	}
@@ -127,7 +125,6 @@ func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint3
 		fecheader.OptionalMask2 = optionalMask2
 	}
 
-	fmt.Println("K1:", fecheader.K1, "K2:", fecheader.K2)
 	return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
 }
 
@@ -168,8 +165,6 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int, is2D bool) []rtp.Packet
 		rowBitstrings := getBlockBitstring(packets)
 
 		fecBitString := bitstring.ToFecBitString(rowBitstrings)
-		// fmt.Println("fecbtstr", fecBitString)
-
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
 		// associate src packet row with this repair packet
@@ -181,8 +176,6 @@ func GenerateRepairRowFec(srcBlock *[]rtp.Packet, L int, is2D bool) []rtp.Packet
 		}
 
 		repairPacket := NewRepairPacketLD(seqnum, fecheader, repairPayload)
-		// fmt.Println("repair")
-		// util.PrintPkt(repairPacket)
 
 		repairPackets = append(repairPackets, repairPacket)
 		seqnum++
