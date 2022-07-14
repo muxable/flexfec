@@ -113,7 +113,7 @@ func decoder() {
 			associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
 			fmt.Println("len : ", len(associatedSrcPackets))
 			fmt.Println(string(Red), "Recovered missing packer")
-			recoveredPacket, _ := recover.RecoverMissingPacketLD(&associatedSrcPackets, repairPacket)
+			recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
 			util.PrintPkt(recoveredPacket)
 
 		} else {
