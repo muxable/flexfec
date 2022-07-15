@@ -23,7 +23,7 @@ func main() {
 
 	repairPkt := recover.GenerateRepairFlex(&srcBlock, mask, optionalmask1, optionalmask2)
 	fmt.Println("repair packet")
-	util.PrintPkt(repairPkt)
+	fmt.Println(util.PrintPkt(repairPkt))
 
 	var receivedPackets []rtp.Packet
 
@@ -32,7 +32,7 @@ func main() {
 			receivedPackets = append(receivedPackets, pkt)
 		} else {
 			fmt.Println("Missing packet")
-			util.PrintPkt(pkt)
+			fmt.Println(util.PrintPkt(pkt))
 		}
 	}
 
@@ -46,6 +46,6 @@ func main() {
 	recoveredPacket, status := recover.RecoverMissingPacketFlex(&associatedPkts, repairPkt)
 
 	if status == 0 {
-		util.PrintPkt(recoveredPacket)
+		fmt.Println(util.PrintPkt(recoveredPacket))
 	}
 }

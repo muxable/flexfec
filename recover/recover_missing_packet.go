@@ -65,8 +65,6 @@ func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_miss
 	} else if fecvariant == "flexibleMask" {
 		payloadStartIndex = 24
 	}
-
-	fmt.Println(SN_Missing)
 	
 	pkt := (*receivedBlock)[0]
 	length := len(pkt.Payload) + len(pkt.CSRC) + len(pkt.Extensions)

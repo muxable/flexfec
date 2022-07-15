@@ -5,9 +5,10 @@ import (
 	"github.com/pion/rtp"
 )
 
-func PrintPkt(pkt rtp.Packet) {
-	fmt.Println("Header :", pkt.Header)
-	fmt.Println("Payload :", pkt.Payload)
-	fmt.Println("PaddingSize :", pkt.PaddingSize, "\n")
+func PrintPkt(pkt rtp.Packet) string {
+	result := fmt.Sprintf("Header : %v\n", pkt.Header)
+	result += fmt.Sprintf("Payload : %v\n", pkt.Payload)
+	result += fmt.Sprintf("PaddingSize : %d\n\n", pkt.PaddingSize)
+	return result
 }
 
