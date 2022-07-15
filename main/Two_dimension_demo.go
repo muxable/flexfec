@@ -43,66 +43,69 @@ func encoder() {
 	}
 
 	// generate packets
-	srcBlock := util.GenerateRTP(4, 3);
-	util.PadPackets(&srcBlock)
+	stream := util.GenerateRTP(10, 10); 
+	util.PadPackets(&stream)
 
-	repairPacketsRow,repairPacketsColumns:=recover.GenerateRepair2dFec(&srcBlock,4,3)
-
-	/*
-		a  X  X  X r1   0 X  X  X
-		a  X  X  X r1   X 5  X  7
-		X  j  k  l r3   X 9 10 11
-		c1 c2 c3 c4
-	*/
-
-	// add packets to be sent to the map
-	testCaseMap := map[int]int {
-		0 : 1, 5 : 1, 7 : 1, 9 : 1, 10 : 1, 11 : 1,
+	// test case list
+	// variant 0 -> row, 1 -> col, 2 -> 2D
+	testCaseList := [][]int{
+		// {4, 3, 2},
+		// {2, 2, 0},
+		{3, 3, 1},
 	}
 
-	
-	for i:= 0 ; i < len(srcBlock); i++ {
-		_, isPresent := testCaseMap[i]
-		if isPresent {
-			fmt.Println(string(Green), "Sending src block")
-			util.PrintPkt(srcBlock[i])
-			fmt.Println()
+	index := 0
+	for _, item := range testCaseList {
+		L := item[0]
+		D := item[1]
+		variant := item[2]
 
-			buf, _ := srcBlock[i].Marshal()
-			conn.Write(buf)
-		} else {
-			fmt.Println(string(Red), "Missing Packet at sender end")
-			util.PrintPkt(srcBlock[i])
-			fmt.Println()
+		srcBlock := stream[index : index + L * D]
+		index += L * D
+
+		/*
+			a  X  X  X r1   0 X  X  X
+			a  X  X  X r1   X 5  X  7
+			X  j  k  l r3   X 9 10 11
+			c1 c2 c3 c4
+		*/
+
+		testCaseMap := map[int]int {
+			0 : 1, 5 : 1, 7 : 1, 9 : 1, 10 : 1, 11 : 1, 1 : 1, 6 : 1,
 		}
-		time.Sleep(1 * time.Second)
-	}
 
+		repairPackets := recover.GenerateRepairLD(&srcBlock, L, D, variant)
+
+		for i:= 0 ; i < len(srcBlock); i++ {
+			_, isPresent := testCaseMap[i]
+			if isPresent {
+				fmt.Println(string(Green), "Sending src block")
+				util.PrintPkt(srcBlock[i])
+				fmt.Println()
 	
-	// sending repair packets, row first then column
-	fmt.Println(string(Blue), "*** Sending row repair pkt ***")
-	for i := 0; i < len(repairPacketsRow); i++ {
-		time.Sleep(1 * time.Second)
-
-		fmt.Println(string(Blue), "Sending a row repair packet")
-		util.PrintPkt(repairPacketsRow[i])
-		fmt.Println()
-		repairBuf, _ := repairPacketsRow[i].Marshal()
-		conn.Write(repairBuf)
+				buf, _ := srcBlock[i].Marshal()
+				conn.Write(buf)
+			} else {
+				fmt.Println(string(Red), "Missing Packet at sender end")
+				util.PrintPkt(srcBlock[i])
+				fmt.Println()
+			}
+			time.Sleep(1 * time.Second)
+		}
+	
+		
+		// sending repair packets, row first then column
+		fmt.Println(string(Blue), "*** Sending repair pkts ***")
+		for i := 0; i < len(repairPackets); i++ {
+			time.Sleep(1 * time.Second)
+	
+			fmt.Println(string(Blue), "Sending a repair packet")
+			util.PrintPkt(repairPackets[i])
+			fmt.Println()
+			repairBuf, _ := repairPackets[i].Marshal()
+			conn.Write(repairBuf)
+		}
 	}
-
-	// sending repair packets,  column
-	fmt.Println(string(Blue), "*** Sending column repair pkt ***")
-	for i := 0; i < len(repairPacketsColumns); i++ {
-		time.Sleep(1 * time.Second)
-
-		fmt.Println(string(Blue), "Sending a column repair packet")
-		util.PrintPkt(repairPacketsColumns[i])
-		fmt.Println()
-		repairBuf, _ := repairPacketsColumns[i].Marshal()
-		conn.Write(repairBuf)
-	}
-
 }
 
 func decoder() {
@@ -138,6 +141,7 @@ func decoder() {
 			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
 			repairheader.Unmarshal(currPkt.Payload[:12])
 
+			// check R, F for fec variant
 			// condition for 2D
 			if repairheader.D == uint8(1) {
 				fmt.Println("First round of row recovery")

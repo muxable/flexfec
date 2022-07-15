@@ -128,28 +128,41 @@ func GenerateRepairFlex(srcBlock *[]rtp.Packet, mask uint16, optionalMask1 uint3
 	return NewRepairPacketFlex(seqnum, fecheader, repairPayload)
 }
 
-func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
-
+func GenerateRepairLD(srcBlock *[]rtp.Packet, L, D int, variant int) []rtp.Packet {
+	// variant 0 -> row, 1 -> col, 2 -> 2D
 	var repairPackets []rtp.Packet
-	if L == 0 && D == 0 {
-		fmt.Println("ignore : future use only")
-		return repairPackets
 
-	} else if L > 0 && D == 0 {
+	if variant == 0 {
 		repairPackets = GenerateRepairRowFec(srcBlock, L, false)
-		return repairPackets
-	} else if L > 0 && D == 1 {
-		rowRepairPackets, colRepairPackets := GenerateRepair2dFec(srcBlock, L, D)
-		return append(rowRepairPackets, colRepairPackets...)
-
-		// TODO
-	} else if L > 0 && D > 1 {
+	} else if variant == 1 {
 		repairPackets = GenerateRepairColFec(srcBlock, L, D)
-		return repairPackets
+	} else if variant == 2 {
+		repairPackets = GenerateRepair2dFec(srcBlock, L, D)
 	} else {
-		fmt.Println("NOT POSSIble")
-		return repairPackets
+		fmt.Println("invalid variant")
 	}
+
+	return repairPackets
+
+	// if L == 0 && D == 0 {
+	// 	fmt.Println("ignore : future use only")
+	// 	// return repairPackets
+	// } else if L > 0 && D == 0 {
+	// 	repairPackets = GenerateRepairRowFec(srcBlock, L, false)
+	// 	// return repairPackets
+	// } else if L > 0 && D == 1 {
+	// 	rowRepairPackets, colRepairPackets := GenerateRepair2dFec(srcBlock, L, D)
+	// 	repairPackets = append(rowRepairPackets, colRepairPackets...)
+	// 	// return append(rowRepairPackets, colRepairPackets...)
+	// } else if L > 0 && D > 1 {
+	// 	repairPackets = GenerateRepairColFec(srcBlock, L, D)
+	// 	// return repairPackets
+	// } else {
+	// 	fmt.Println("NOT POSSIble")
+	// 	// return repairPackets
+	// }
+
+	// return repairPackets
 
 }
 
@@ -218,11 +231,11 @@ func GenerateRepairColFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 	return repairPackets
 }
 
-func GenerateRepair2dFec(srcBlock *[]rtp.Packet, L, D int) ([]rtp.Packet, []rtp.Packet) {
+func GenerateRepair2dFec(srcBlock *[]rtp.Packet, L, D int) []rtp.Packet {
 
 	is2D := true
 	rowRepairPackets := GenerateRepairRowFec(srcBlock, L, is2D)
 	colRepairPackets := GenerateRepairColFec(srcBlock, L, D)
 
-	return rowRepairPackets, colRepairPackets
+	return append(rowRepairPackets, colRepairPackets...)
 }
