@@ -6,56 +6,70 @@ import (
 	"fmt"
 )
 
-const (
-	Red   = "\033[31m"
-	Green = "\033[32m"
-	White = "\033[37m"
-	Blue  = "\033[34m"
-)
+func testrow() {
+	srcBlock := util.GenerateRTP(4, 3)
+	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
+	bitsrings := recover.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(&bitsrings)
+
+	repairPacketsRow := recover.GenerateRepairLD(&bitsrings, 4, 3, 0, SN_Base)
+
+	for i := 0; i < len(srcBlock); i++ {
+		fmt.Println(util.PrintPkt(srcBlock[i]))
+	}
+
+	fmt.Println("-----------------------------------------")
+
+	for _, rowRepair := range repairPacketsRow {
+		fmt.Println(util.PrintPkt(rowRepair))
+	}
+
+
+}
+
+func testcol() {
+	srcBlock := util.GenerateRTP(4, 3)
+	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
+	bitsrings := recover.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(&bitsrings)
+
+	repairPacketsCol := recover.GenerateRepairLD(&bitsrings, 4, 3, 1, SN_Base)
+
+	for i := 0; i < len(srcBlock); i++ {
+		fmt.Println(util.PrintPkt(srcBlock[i]))
+	}
+
+	fmt.Println("-----------------------------------------")
+
+	for _, rowRepair := range repairPacketsCol {
+		fmt.Println(util.PrintPkt(rowRepair))
+	}
+
+
+}
+
+func test2D() {
+	srcBlock := util.GenerateRTP(4, 3)
+	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
+	bitsrings := recover.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(&bitsrings)
+
+	repairPackets2D := recover.GenerateRepairLD(&bitsrings, 4, 3, 2, SN_Base)
+
+	for i := 0; i < len(srcBlock); i++ {
+		fmt.Println(util.PrintPkt(srcBlock[i]))
+	}
+
+	fmt.Println("-----------------------------------------")
+
+	for _, rowRepair := range repairPackets2D {
+		fmt.Println(util.PrintPkt(rowRepair))
+	}
+
+}
 
 func main() {
-
-	// sender
-
-	packets := util.GenerateRTP(4, 3) // L=4 and D=3
-	util.PadPackets(&packets)
-
-	fmt.Println(string(Green), "source packets")
-
-	for i := 0; i < 4; i++ {
-		fmt.Println("Col", i+1)
-		for j := 0; j < 3; j++ {
-			util.PrintPkt(packets[j*4+i])
-		}
-	}
-
-	//  L>0, D>1 Col Fec
-	repairPackets := recover.GenerateRepairLD(&packets, 4, 3)
-
-	fmt.Println(string(Blue), "repair packets")
-
-	for i := 0; i < len(repairPackets); i++ {
-		util.PrintPkt(repairPackets[i])
-	}
-
-	/*
-		fmt.Println(string(Green), "source packets")
-
-		for i := 0; i < 3; i++ {
-			fmt.Println("Row", i+1)
-			for j := 0; j < 4; j++ {
-				util.PrintPkt(packets[i*4+j])
-			}
-		}
-
-			//  L>0, D=0 Row Fec
-			repairPackets := recover.GenerateRepairLD(&packets, 4, 0)
-
-			fmt.Println(string(Blue), "repair packets")
-
-			for i := 0; i < len(repairPackets); i++ {
-				util.PrintPkt(repairPackets[i])
-			}
-	*/
-
+	// testrow()
+	// testcol()
+	test2D()
 }

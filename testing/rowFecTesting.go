@@ -24,9 +24,10 @@ func main() {
 
 	// Sender
 	srcBlock := util.GenerateRTP(L, D)
-	util.PadPackets(&srcBlock)
+	bitsrings := util.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(bitsrings)
 
-	repairPacketsRow := recover.GenerateRepairLD(&srcBlock, L, 0)
+	repairPacketsRow := recover.GenerateRepairLD(bitsrings, L, 0)
 	var recievedPackets []rtp.Packet
 
 	for i := 0; i < len(srcBlock); i++ {

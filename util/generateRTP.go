@@ -17,6 +17,10 @@ func GenerateRTP(L int, D int) []rtp.Packet {
 		0xFF, 0xFF, 0xAF, 0xFF, 0x98, 0x36, 0xbE, 0x88,
 	}
 
+	csrc := []uint32{
+		0x64, 0x27, 0x82, 0x45, 0x90, 0xE0,
+	}
+
 	size := len(pkts)
 
 	n := uint16(L * D)
@@ -24,10 +28,13 @@ func GenerateRTP(L int, D int) []rtp.Packet {
 	SN_base := uint16(10000)
 	ssrc := uint32(rand.Intn(4294967296))
 
+
 	packets := []rtp.Packet{}
 
 	for i := uint16(0); i < n; i++ {
 		endIndex := rand.Intn(size)
+		csrcIndex := rand.Intn(5)
+		isExtension :=rand.Intn(2)
 
 		packet := rtp.Packet{
 			Header: rtp.Header{
@@ -39,9 +46,17 @@ func GenerateRTP(L int, D int) []rtp.Packet {
 				SequenceNumber: SN_base + i,
 				Timestamp:      54243243,
 				SSRC:           ssrc,
-				CSRC:           []uint32{},
+				CSRC:           csrc[:csrcIndex],
 			},
 			Payload: pkts[:endIndex],
+		}
+
+		if isExtension == 1 {
+			packet.Header.Extension = true
+			packet.Header.ExtensionProfile = 0x1000
+			packet.Header.SetExtension(uint8(1), []byte{0xA5, 0x45})
+			packet.Header.SetExtension(uint8(2), []byte{0xBB, 0xCC})
+			packet.Header.SetExtension(uint8(3), []byte{0xCC,0xCC,0xCC})
 		}
 		packets = append(packets, packet)
 	}
