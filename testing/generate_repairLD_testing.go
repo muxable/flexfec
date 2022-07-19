@@ -2,6 +2,7 @@ package main
 
 import (
 	"flexfec/recover"
+	"flexfec/bitstring"
 	"flexfec/util"
 	"fmt"
 )
@@ -9,8 +10,8 @@ import (
 func testrow() {
 	srcBlock := util.GenerateRTP(4, 3)
 	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
-	bitsrings := recover.GetBlockBitstring(srcBlock)
-	util.PadBitStrings(&bitsrings)
+	bitsrings := bitstring.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(&bitsrings, -1)
 
 	repairPacketsRow := recover.GenerateRepairLD(&bitsrings, 4, 3, 0, SN_Base)
 
@@ -30,8 +31,8 @@ func testrow() {
 func testcol() {
 	srcBlock := util.GenerateRTP(4, 3)
 	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
-	bitsrings := recover.GetBlockBitstring(srcBlock)
-	util.PadBitStrings(&bitsrings)
+	bitsrings := bitstring.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(&bitsrings, -1)
 
 	repairPacketsCol := recover.GenerateRepairLD(&bitsrings, 4, 3, 1, SN_Base)
 
@@ -51,8 +52,8 @@ func testcol() {
 func test2D() {
 	srcBlock := util.GenerateRTP(4, 3)
 	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
-	bitsrings := recover.GetBlockBitstring(srcBlock)
-	util.PadBitStrings(&bitsrings)
+	bitsrings := bitstring.GetBlockBitstring(srcBlock)
+	util.PadBitStrings(&bitsrings, -1)
 
 	repairPackets2D := recover.GenerateRepairLD(&bitsrings, 4, 3, 2, SN_Base)
 

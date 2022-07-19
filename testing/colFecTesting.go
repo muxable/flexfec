@@ -32,11 +32,11 @@ func main() {
 	for i := 0; i < len(srcBlock); i++ {
 		if i != 1 && i != 2 && i != 6 {
 			fmt.Println(string(Green), "Sending a src packet")
-			util.PrintPkt(srcBlock[i])
+			fmt.Println(util.PrintPkt(srcBlock[i]))
 			recievedPackets = append(recievedPackets, srcBlock[i])
 		} else {
 			fmt.Println(string(Red), "missing packet")
-			util.PrintPkt(srcBlock[i])
+			fmt.Println(util.PrintPkt(srcBlock[i]))
 		}
 	}
 

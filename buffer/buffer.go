@@ -20,10 +20,6 @@ func Update(BUFFER map[Key]rtp.Packet, sourcePkt rtp.Packet) {
 	BUFFER[key] = sourcePkt
 }
 
-// func ExtractLD(BUFFER map[Key]rtp.Packet, repairPacket rtp.Packet) []rtp.Packet {
-
-// }
-
 func readMask(BUFFER map[Key]rtp.Packet, receivedBlock *[]rtp.Packet, SN_base uint16, mask uint64, bits int, start uint16) {
 	for i := bits; i >= 0; i-- {
 		if (mask>>i)&1 == 1 {

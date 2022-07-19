@@ -3,6 +3,7 @@ package main
 import (
 	"flexfec/buffer"
 	"flexfec/recover"
+	"flexfec/bitstring"
 	"flexfec/util"
 	"fmt"
 
@@ -23,21 +24,24 @@ var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 func main() {
 
 	// Sender
-	srcBlock := util.GenerateRTP(L, D)
-	bitsrings := util.GetBlockBitstring(srcBlock)
-	util.PadBitStrings(bitsrings)
+	srcBlock := util.GenerateRTP(4, 3)
+	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
+	bitsrings := bitstring.GetBlockBitstring(&srcBlock)
+	util.PadBitStrings(&bitsrings, -1)
 
-	repairPacketsRow := recover.GenerateRepairLD(bitsrings, L, 0)
+	repairPacketsRow := recover.GenerateRepairLD(&bitsrings, 4, 3, 0, SN_Base)
+
 	var recievedPackets []rtp.Packet
 
 	for i := 0; i < len(srcBlock); i++ {
 		if i != 1 && i != 2 && i != 6 {
 			fmt.Println(string(Green), "Sending a src packet")
-			util.PrintPkt(srcBlock[i])
+			fmt.Println(util.PrintPkt(srcBlock[i]))
 			recievedPackets = append(recievedPackets, srcBlock[i])
 		} else {
 			fmt.Println(string(Red), "missing packet")
-			util.PrintPkt(srcBlock[i])
+			fmt.Println(util.PrintPkt(srcBlock[i]))
+			// util.PrintBytes(bitstring.ToBitString(&srcBlock[i]))
 		}
 	}
 
@@ -46,22 +50,11 @@ func main() {
 		buffer.Update(BUFFER, pkt)
 	}
 
-	// for _, repairPacket := range repairPacketsRow {
-	// 	associatedSrcPackets := buffer.Extract(BUFFER, repairPacket)
-	// 	fmt.Println(string(White), "recovery")
-
-	// 	recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacket)
-	// 	util.PrintPkt(recoveredPacket)
-	// }
-
 	for i := 0; i < len(repairPacketsRow); i++ {
 		associatedSrcPackets := buffer.Extract(BUFFER, repairPacketsRow[i])
-		// for _, pkt := range associatedSrcPackets {
-		// 	util.PrintPkt(pkt)
-		// }
 		fmt.Println(string(White), "recovery")
 
 		recoveredPacket, _ := recover.RecoverMissingPacket(&associatedSrcPackets, repairPacketsRow[i])
-		util.PrintPkt(recoveredPacket)
+		fmt.Println(util.PrintPkt(recoveredPacket))
 	}
 }

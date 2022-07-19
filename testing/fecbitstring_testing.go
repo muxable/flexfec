@@ -18,7 +18,7 @@ func main(){
 		bitstrings = append(bitstrings, bitstr)
 	}
 
-	util.PadBitStrings(&bitstrings)
+	util.PadBitStrings(&bitstrings, -1)
 
 	for i, bitstr := range bitstrings {
 		fmt.Println("Bitstring ", i + 1)

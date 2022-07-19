@@ -1,8 +1,10 @@
 package recover
 
 import (
-	"encoding/binary"
 	fech "flexfec/fec_header"
+	"flexfec/bitstring"
+	"encoding/binary"
+	"flexfec/util"
 	"fmt"
 
 	"github.com/pion/rtp"
@@ -19,74 +21,41 @@ func SN_Missing(receivedBlock *[]rtp.Packet, SN_Sum int) int {
 }
 
 func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_missing int, fecvariant string) rtp.Packet {
-	var ssrc uint32
+	ssrc := (*receivedBlock)[0].Header.SSRC
+	ssrcBuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(ssrcBuf, ssrc)
 
-	// Header recovery
-	fecBitString := repairPacket.Payload
-	fecHeaderBitString := fecBitString[:8]
+	bitsrings := bitstring.GetBlockBitstring(receivedBlock)
+	fecBitString := []byte{}
+	// remove 8-12 which contains snbase, L, D
+	fecBitString = append(fecBitString, repairPacket.Payload[:8]...)
+	fecBitString = append(fecBitString, repairPacket.Payload[12:]...)
 
-	recoveredHeader := make([]byte, 8)
-	var recoveredPadding byte
+	length := len(fecBitString)
+	util.PadBitStrings(&bitsrings, length)
 
-	for _, pkt := range *(receivedBlock) {
-		buf, _ := pkt.Header.Marshal()
-		buf = buf[:8]
+	bitstringsXOR := bitstring.ToFecBitString(&bitsrings)
 
-		ssrc = pkt.Header.SSRC
+	buf := make([]byte, length)
 
-		for index, BYTE := range buf {
-			recoveredHeader[index] ^= BYTE
-		}
-		recoveredPadding ^= pkt.PaddingSize // xor of all recieved pkts
+	for index, BYTE := range bitstringsXOR {
+		buf[index] = BYTE ^ fecBitString[index]
 	}
 
-	recoveredPadding ^= fecBitString[len(fecBitString)-1]
+	recoveredBuf := []byte{}
+	recoveredBuf = append(recoveredBuf, buf[:8]...)
+	recoveredBuf = append(recoveredBuf, ssrcBuf...)
+	recoveredBuf = append(recoveredBuf, buf[8:]...)
 
-	for index, BYTE := range fecHeaderBitString {
-		recoveredHeader[index] ^= BYTE
-	}
+	lengthRecovery := binary.BigEndian.Uint16(buf[2:4])
 
-	var recoveredPacket rtp.Packet
+	recoveredPkt := rtp.Packet{}
+	recoveredPkt.Unmarshal(recoveredBuf[:lengthRecovery])
 
-	recoveredPacket.Header.Version = 2
-	recoveredPacket.Header.Padding = (recoveredHeader[0] >> 5 & 0x1) > 0
-	recoveredPacket.Header.Extension = (recoveredHeader[0] >> 4 & 0x1) > 0
-	recoveredPacket.Header.Marker = (recoveredHeader[1] >> 7 & 0x1) > 0
-	recoveredPacket.Header.PayloadType = (recoveredHeader[1] & 0x7F)
-	recoveredPacket.Header.SequenceNumber = uint16(SN_missing)
-	recoveredPacket.Header.Timestamp = binary.BigEndian.Uint32(recoveredHeader[4:8])
-	recoveredPacket.Header.SSRC = ssrc
-	recoveredPacket.PaddingSize = recoveredPadding
+	recoveredPkt.Header.Version = 2
+	recoveredPkt.Header.SequenceNumber = uint16(SN_missing)
 
-	// Payload recovery
-	var payloadStartIndex int
-	if fecvariant == "LD" {
-		payloadStartIndex = 12
-	} else if fecvariant == "flexibleMask" {
-		payloadStartIndex = 24
-	}
-	
-	pkt := (*receivedBlock)[0]
-	length := len(pkt.Payload) + len(pkt.CSRC) + len(pkt.Extensions)
-
-	recoveredPayload := make([]byte, length)
-	fecPaylodBitString := fecBitString[payloadStartIndex : payloadStartIndex + length]
-
-	for _, pkt := range *(receivedBlock) {
-		for i := 0; i < length; i++ {
-			recoveredPayload[i] ^= pkt.Payload[i]
-		}
-	}
-
-	for index, BYTE := range fecPaylodBitString {
-		recoveredPayload[index] ^= BYTE
-	}
-
-	recoveredPacket.Payload = recoveredPayload
-	// recoveredPacket.Payload = make([]byte, length-int(recoveredPadding))
-	// copy(recoveredPacket.Payload, recoveredPayload)
-
-	return recoveredPacket
+	return recoveredPkt
 }
 
 // 1d 1 row

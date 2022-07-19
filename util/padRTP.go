@@ -1,6 +1,6 @@
 package util
 
-func PadBitStrings(bitstrings *[][]byte){
+func PadBitStrings(bitstrings *[][]byte, length int){
 	maxSize := -1
 	n := len(*bitstrings)
 
@@ -9,6 +9,10 @@ func PadBitStrings(bitstrings *[][]byte){
 		if maxSize < currSize {
 			maxSize = currSize
 		}
+	}
+
+	if maxSize < length {
+		maxSize = length
 	}
 
 	for i := 0; i < n; i++ {
