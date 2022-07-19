@@ -26,11 +26,13 @@ const (
 
 // Global variables
 var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
-var BUFFER_ROW_REC map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
+var BUFFER_REPAIR map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
+var BUFFER_ITERTIVE map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 
-var is_2d_row bool = false
-var is_2d bool = false
-var col_count uint8  = uint8(0)
+
+// var is_2d_row bool = false
+// var is_2d bool = false
+// var col_count uint8  = uint8(0)
 
 
 func encoder() {
@@ -117,6 +119,91 @@ func encoder() {
 	}
 }
 
+func decoder() {
+	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
+	if err != nil {
+		panic(err)
+	}
+
+	conn, err := net.ListenUDP("udp4", serverAddr)
+	if err != nil {
+		panic(err)
+	}
+
+	file, err := os.Create("output/receiver.txt")
+
+	if err != nil {
+		fmt.Println("file error")
+	}
+
+	conn.SetReadDeadline(time.Now().Add(30 * time.Second)) // stops reading after 25 seconds
+	
+	for {
+		buf := make([]byte, mtu)
+		i, _, err := conn.ReadFrom(buf)
+
+		if err != nil {
+			break
+		}
+
+		currPkt := rtp.Packet{}
+		currPkt.Unmarshal(buf[:i])
+	
+		if currPkt.SSRC == repairSSRC {
+			buffer.Update(BUFFER_REPAIR, currPkt)
+
+		} else {
+			buffer.Update(BUFFER, currPkt)
+		}
+		// Length function to be declared or something similar
+		while(buffer.Length(BUFFER_REPAIR)!=0){
+			// sort the repair packet buffer to get repair packets in order of missing packets to help in recovery
+			// pop first repair packet off BUFFER
+
+			// if fully recovered {
+			// 	continue
+			//   }
+			//   if can recover {
+			// 	recover packet
+			// 	add recovered packet to source packet buffer
+			// 	continue
+			// } else {
+			// 	if not 2d {
+			// 	  log warning // recovery not possible
+			// 	} else {
+			// 	  // recovery might be possible in the future,
+			// 	  push repair packet back onto buffer
+			// 	}
+			// 	break
+		}
+	}
+	
+	fmt.Println("Printing Row recovery packets form Buffer:",BUFFER_ROW_REC)
+	BUFFER_ROW_REC = make(map[buffer.Key]rtp.Packet)
+
+	fmt.Println("Printing All the Packets form Buffer:", BUFFER)
+
+	// Check if retransmission is required
+	// Print or save all the packets
+	BUFFER = make(map[buffer.Key]rtp.Packet)
+}
+
+func main() {
+	go encoder()
+	decoder()
+}
+
+
+
+
+
+// ------------------------------------------------
+// OLD CODE ENCODER
+
+
+
+
+/*
 func decoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
 	if err != nil {
@@ -244,9 +331,5 @@ func decoder() {
 	BUFFER = make(map[buffer.Key]rtp.Packet)
 }
 
-func main() {
-	go encoder()
-	decoder()
-}
 
-
+*/
