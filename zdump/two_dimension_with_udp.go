@@ -42,67 +42,77 @@ func encoder() {
 		panic(err)
 	}
 
+	file, err := os.Create("output/sender.txt")
+
+	if err != nil {
+		fmt.Println("file error")
+	}
+
 	// generate packets
-	srcBlock := util.GenerateRTP(4, 3); 
-	util.PadPackets(&srcBlock)
+	stream := util.GenerateRTP(10, 10); 
+	util.PadPackets(&stream)
 
-	repairPacketsRow,repairPacketsColumns:=recover.GenerateRepair2dFec(&srcBlock,4,3)
-
-	/*
-		a  X  X  X r1   0 X  X  X
-		a  X  X  X r1   X 5  X  7
-		X  j  k  l r3   X 9 10 11
-		c1 c2 c3 c4
-	*/
-
-	// add packets to be sent to the map
-	testCaseMap := map[int]int {
-		0 : 1, 5 : 1, 7 : 1, 9 : 1, 10 : 1, 11 : 1,
+	// test case list
+	// variant 0 -> row, 1 -> col, 2 -> 2D
+	testCaseList := [][]int{
+		{4, 3, 2},
+		{4, 3, 0},
+		{4, 3, 1},
 	}
 
-	
-	for i:= 0 ; i < len(srcBlock); i++ {
-		_, isPresent := testCaseMap[i]
-		if isPresent {
-			fmt.Println(string(Green), "Sending src block")
-			util.PrintPkt(srcBlock[i])
-			fmt.Println()
+	index := 0
+	for _, item := range testCaseList {
+		L := item[0]
+		D := item[1]
+		variant := item[2]
 
-			buf, _ := srcBlock[i].Marshal()
-			conn.Write(buf)
-		} else {
-			fmt.Println(string(Red), "Missing Packet at sender end")
-			util.PrintPkt(srcBlock[i])
-			fmt.Println()
+		srcBlock := stream[index : index + L * D]
+		index += L * D
+
+		testCaseMap := util.GetTestCaseMap(variant)
+
+		repairPackets := recover.GenerateRepairLD(&srcBlock, L, D, variant)
+
+		for i:= 0 ; i < len(srcBlock); i++ {
+			_, isPresent := testCaseMap[i]
+			if isPresent {
+				file.WriteString("Sending src block\n")
+				file.WriteString(util.PrintPkt(srcBlock[i]))
+
+				// fmt.Println(string(Green), "Sending src block")
+				// fmt.Println(util.PrintPkt(srcBlock[i]))
+	
+				buf, _ := srcBlock[i].Marshal()
+				conn.Write(buf)
+			} else {
+				file.WriteString("Missing Packet at sender end\n")
+				file.WriteString(util.PrintPkt(srcBlock[i]))
+
+				// fmt.Println(string(Red), "Missing Packet at sender end")
+				// fmt.Println(util.PrintPkt(srcBlock[i]))
+			}
+			time.Sleep(500 * time.Millisecond)
 		}
-		time.Sleep(1 * time.Second)
-	}
-
 	
-	// sending repair packets, row first then column
-	fmt.Println(string(Blue), "*** Sending row repair pkt ***")
-	for i := 0; i < len(repairPacketsRow); i++ {
-		time.Sleep(1 * time.Second)
+		
+		// sending repair packets, row first then column
+		// fmt.Println(string(Blue), "*** Sending repair pkts ***")
+		file.WriteString("*** Sending repair pkts ***\n")
+		for i := 0; i < len(repairPackets); i++ {
+			time.Sleep(500 * time.Millisecond)
+	
+			// fmt.Println(string(Blue), "Sending a repair packet")
+			// fmt.Println(util.PrintPkt(repairPackets[i]))
 
-		fmt.Println(string(Blue), "Sending a row repair packet")
-		util.PrintPkt(repairPacketsRow[i])
-		fmt.Println()
-		repairBuf, _ := repairPacketsRow[i].Marshal()
-		conn.Write(repairBuf)
+			file.WriteString("Sending a repair packet\n")
+			file.WriteString(util.PrintPkt(repairPackets[i]))
+
+			repairBuf, _ := repairPackets[i].Marshal()
+			conn.Write(repairBuf)
+		}
+
+		file.WriteString("-----------------------------------------------------------------\n")
 	}
-
-	// sending repair packets,  column
-	fmt.Println(string(Blue), "*** Sending column repair pkt ***")
-	for i := 0; i < len(repairPacketsColumns); i++ {
-		time.Sleep(1 * time.Second)
-
-		fmt.Println(string(Blue), "Sending a column repair packet")
-		util.PrintPkt(repairPacketsColumns[i])
-		fmt.Println()
-		repairBuf, _ := repairPacketsColumns[i].Marshal()
-		conn.Write(repairBuf)
-	}
-
 }
 
 func decoder() {
@@ -116,7 +126,13 @@ func decoder() {
 		panic(err)
 	}
 
-	conn.SetReadDeadline(time.Now().Add(25 * time.Second)) // stops reading after 25 seconds
+	file, err := os.Create("output/receiver.txt")
+
+	if err != nil {
+		fmt.Println("file error")
+	}
+
+	conn.SetReadDeadline(time.Now().Add(30 * time.Second)) // stops reading after 25 seconds
 	
 	for {
 		buf := make([]byte, mtu)
@@ -130,9 +146,11 @@ func decoder() {
 		currPkt.Unmarshal(buf[:i])
 	
 		if currPkt.SSRC == repairSSRC {
-			fmt.Println(string(Blue), "Recieved Repair PKt")
-			util.PrintPkt(currPkt)
-			fmt.Println()
+			file.WriteString("Recieved Repair PKt\n")
+			file.WriteString(util.PrintPkt(currPkt))
+
+			// fmt.Println(string(Blue), "Recieved Repair PKt")
+			// fmt.Println(util.PrintPkt(currPkt))
 
 			// Unmarshal payload to get the values of L and D to seggregate row and column repair packets
 			var repairheader fech.FecHeaderLD = fech.FecHeaderLD{}
@@ -141,7 +159,7 @@ func decoder() {
 			// check R, F for fec variant
 			// condition for 2D
 			if repairheader.D == uint8(1) {
-				fmt.Println("First round of row recovery")
+				file.WriteString("First round of row recovery\n")
 
 				if is_2d_row == false {
 					is_2d_row = true
@@ -163,18 +181,21 @@ func decoder() {
 		
 			if status == 0 {
 				buffer.Update(BUFFER, recoveredPacket) // update recoveredPacket to buffer
-				fmt.Println(string(Red), "*** Recovered Packet ***")
-				util.PrintPkt(recoveredPacket)
+
+				file.WriteString("*** Recovered Packet ***\n")
+				file.WriteString(util.PrintPkt(recoveredPacket))
+
+				// fmt.Println(string(Red), "*** Recovered Packet ***")
+				// fmt.Println(util.PrintPkt(recoveredPacket))
 			}
 			
 
-			fmt.Println(string(White), "Length of associatedSrcPackets:",len(associatedSrcPackets))
-			fmt.Println("col_count:",col_count)
-			fmt.Println("repairheader.L",repairheader.L)
-			fmt.Println()
+			// fmt.Println(string(White), "Length of associatedSrcPackets:",len(associatedSrcPackets))
+			file.WriteString("Length of associatedSrcPackets:" + strconv.Itoa(len(associatedSrcPackets)) + "\n")
 
 			if col_count == repairheader.L{
-				fmt.Println("Second round of row recovery")
+				// fmt.Println("Second round of row recovery")
+				file.WriteString("Second round of row recovery\n")
 				// second round row
 				// for all pkts in ROW_BUFFER
 					// reapir using repair again
@@ -185,11 +206,14 @@ func decoder() {
 
 					if status == 0 {
 						buffer.Update(BUFFER, recoveredPacket) // update recoveredPacket to buffer
-						fmt.Println(string(Red), "*** Recovered Packet ***")
-						util.PrintPkt(recoveredPacket)
+						// fmt.Println(string(Red), "*** Recovered Packet ***")
+						// fmt.Println(util.PrintPkt(recoveredPacket))
+						file.WriteString("*** Recovered Packet ***\n")
+						file.WriteString(util.PrintPkt(recoveredPacket))
 					}
 					
-					fmt.Println(string(White), "Length of associatedSrcPackets:",len(associatedSrcPackets))
+					// fmt.Println(string(White), "Length of associatedSrcPackets:",len(associatedSrcPackets))
+					file.WriteString("Length of associatedSrcPackets:" + strconv.Itoa(len(associatedSrcPackets)) + "\n")
 					
 				}
 				// reset the variables
@@ -198,9 +222,11 @@ func decoder() {
 			}
 
 		} else {
-			fmt.Println(string(White), "recieved src pkt")
-			util.PrintPkt(currPkt)
-			fmt.Println()
+			// fmt.Println(string(White), "recieved src pkt")
+			// fmt.Println(util.PrintPkt(currPkt))
+
+			// file.WriteString("recieved src pkt\n")
+			// file.WriteString(util.PrintPkt(currPkt))
 
 			buffer.Update(BUFFER, currPkt)
 		}
@@ -209,7 +235,8 @@ func decoder() {
 	fmt.Println("Printing Row recovery packets form Buffer:",BUFFER_ROW_REC)
 	BUFFER_ROW_REC = make(map[buffer.Key]rtp.Packet)
 
-	fmt.Println("Printing All the Packets form Buffer:",BUFFER)
+	fmt.Println("Printing All the Packets form Buffer:", BUFFER)
+
 	// Check if retransmission is required
 	// Print or save all the packets
 	BUFFER = make(map[buffer.Key]rtp.Packet)
