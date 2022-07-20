@@ -6,35 +6,46 @@
 .
 ├── bitstring
 │   ├── bitstring.go
-│   └── fecbitstring.go
-├── dump
-│   ├── bitstring.go
-│   ├── fecheader.go
-│   ├── generateRepair.go
-│   ├── recoverMissingPacket.go
-│   ├── repair.go
-│   └── generateRTP.go
+│   ├── fecbitstring.go
+│   └── getBitstrings.go
+├── buffer
+│   └── buffer.go
 ├── fec_header
 │   ├── fecheader.go
 │   ├── fech_flexiblemask.go
 │   ├── fech_fromfecbitstring.go
 │   ├── fech_LD.go
 │   └── fech_retransmission.go
+├── flex-fec-flow.pdf
 ├── go.mod
 ├── go.sum
 ├── main
-│   └── test.go
+│   ├── ColFec_demo.go
+│   ├── FlexibleMask_demo.go
+│   ├── output
+│   │   ├── buffer.txt
+│   │   ├── receiver.txt
+│   │   └── sender.txt
+│   ├── RowFec_demo.go
+│   └── Two_dimension_demo.go
 ├── README.md
+├── recover
+│   ├── generate_repair.go
+│   └── recover_missing_packet.go
 ├── testing
-│   ├── bitstring_testing.go
-│   ├── fecheader_testing.go
-│   └── rtp_to_fech_testing.go
-├── todo.md
+│   ├── 01_fecheader_testing.go
+│   ├── 02_fecbitstring_testing.go
+│   ├── 03_generate_repair_testing.go
+│   ├── 04_buffer_testing.go
+│   ├── 05_flexibleMask_testing.go
+│   └── 06_flexfec_testing.go
 └── util
     ├── generateRTP.go
     ├── padRTP.go
     ├── printBytes.go
-    └── printRTP.go
+    ├── printRTP.go
+    └── testCaseMap.go
+
 
 ```
 
@@ -100,7 +111,7 @@ this function recovers the missing packet in the recieved source block, and uses
 
 - recover missing packet in 1d 1row variant :  
 
-![1d 1row fec case scenerio](https://github.com/muxable/flexfec/blob/main/dump/1d_1row_fec.png?raw=true)  
+    - [1d 1row fec case scenerio](https://github.com/muxable/flexfec/blob/main/dump/1d_1row_fec.png?raw=true)  
 
 - to run:
 
