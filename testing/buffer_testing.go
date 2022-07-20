@@ -3,8 +3,8 @@
 package main
 
 import (
+	"flexfec/bitstring"
 	"flexfec/buffer"
-	"flexfec/fec_header"
 	"flexfec/recover"
 	"flexfec/util"
 	"fmt"
@@ -14,29 +14,29 @@ import (
 
 func test1() {
 	BUFFER := make(map[buffer.Key]rtp.Packet)
+	srcBlock := util.GenerateRTP(4, 3)
 
-	srcBlock := util.GenerateRTP(3, 4)
-	util.PadPackets(&srcBlock)
-	
-	repairPackets := recover.GenerateRepairRowFec(&srcBlock, 4)
+	SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
+	bitsrings := bitstring.GetBlockBitstring(&srcBlock)
+	util.PadBitStrings(&bitsrings, -1)
 
+	repairPacketsRow := recover.GenerateRepairLD(&bitsrings, 4, 3, 0, SN_Base)
 
-	for i :=0; i < len(srcBlock) ; i++ {
+	for i := 0; i < len(srcBlock); i++ {
 		util.PrintPkt(srcBlock[i])
-		if (i + 1) % 4 == 0 {
+		if (i+1)%4 == 0 {
 			fmt.Println("------------------------------------------")
 		}
 	}
 
-	/* 
-		0 X  X  3
-		4 5  X  7
-	 	8 9 10 11
+	/*
+			0 X  X  3
+			4 5  X  7
+		 	8 9 10 11
 	*/
 
-
 	// Assume packets received
-	for i :=0; i < len(srcBlock) ; i++ {
+	for i := 0; i < len(srcBlock); i++ {
 		if i == 1 || i == 2 || i == 6 {
 			continue
 		}
@@ -46,13 +46,14 @@ func test1() {
 	fmt.Println(BUFFER)
 
 	// repair packets received
-	for _, pkt := range repairPackets {
-		fmt.Println("len :",len(buffer.Extract(BUFFER, pkt)))
-		util.PrintPkt(pkt)
+	for _, pkt := range repairPacketsRow {
+		fmt.Println("len :", len(buffer.Extract(BUFFER, pkt)))
+		fmt.Println("missing:", buffer.CountMissing(BUFFER, pkt))
 	}
-	
+
 }
 
+/*
 func test2() {
 	BUFFER := make(map[buffer.Key]rtp.Packet)
 
@@ -68,12 +69,12 @@ func test2() {
 		}
 	}
 
-	/* 
-		0 X  X  3
-		4 5  X  7
-	 	8 9 10 11
-	*/
-	
+	/*
+			0 X  X  3
+			4 5  X  7
+		 	8 9 10 11
+	//
+
 	// Assume packets received
 	for i := 0; i < len(srcBlock); i++ {
 		if i == 1 || i == 2 || i == 6 {
@@ -98,15 +99,14 @@ func test3() {
 	srcBlock := util.GenerateRTP(10, 10)
 	util.PadPackets(&srcBlock)
 
-	mask := uint16(36160) // 1000110101000000 16 bit 3,4,6,8
-	optionalmask1 := uint32(3229756930) // 11000000100000100010111000000010 32 bit 15,22,28,32,34,35,36,44,
+	mask := uint16(36160)                         // 1000110101000000 16 bit 3,4,6,8
+	optionalmask1 := uint32(3229756930)           // 11000000100000100010111000000010 32 bit 15,22,28,32,34,35,36,44,
 	optionalmask2 := uint64(13871700391609118210) // 1100000010000010001011100000001011000000100000100010111000000010 64 bit 46,47,54,60,64,66,67,68,76,78,79,86,92,96,98,99
 	k1 := true
 	k2 := true
 
 	sn_base := srcBlock[0].Header.SequenceNumber
 	fmt.Println("sn base :", sn_base)
-	
 
 	// creating dummy mask repair packet for buffer testing
 	fecheader := fech.NewFecHeaderFlexibleMask(false, false, false, false, 11, false, 56, 23434, 342334, sn_base, k1, mask, optionalmask1, k2, optionalmask2)
@@ -141,16 +141,17 @@ func test3() {
 	}
 
 }
+*/
 
 func main() {
-	/* 
+	/*
 		Uncomment to test the respective test case
 		test1() -> row fec with buffer
 		test2() -> col fec with buffer
 		test3() -> mask fec with buffer
 	*/
 
-	// test1()
+	test1()
 	// test2()
-	test3()
+	// test3()
 }
