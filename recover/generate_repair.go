@@ -192,20 +192,26 @@ func GenerateRepairRowFec(srcBlkBitstrs *[][]byte, L int, is2D bool, SN_Base uin
 //  L>0 & D>0
 func GenerateRepairColFec(srcBlkBitstrs *[][]byte, L, D int, SN_Base uint16) []rtp.Packet {
 	var repairPackets []rtp.Packet
+	// src [[b0], [b1],........ [b11]]
+	// L = 0 col bitstrings = [[b0], [b4], [b8]]
 
 	// seqnum := uint16(rand.Intn(65535 - L))
-
+	// fmt.Println("source blk : ",)
+	// for i, b := range *srcBlkBitstrs {
+	// 	fmt.Println(i, b)
+	// }
+	// fmt.Println()
 	size := len((*srcBlkBitstrs)[0])
-	colBitsrings := make([][]byte, D)
 
-	for j := 0; j < L; j++ {
-		for i := 0; i < D; i++ {
-			colBitsrings[i] = make([]byte, size)
-			copy(colBitsrings[i], (*srcBlkBitstrs)[i*L+j])
+	for j := 0; j < L; j++ { // 4
+		colbitstrings := make([][]byte, D)
+		for i := 0; i < D; i++ { // 3
+			colbitstrings[i] = make([]byte, size)
+			copy(colbitstrings[i], (*srcBlkBitstrs)[i*L+j])
 		}
 
-		fecBitString := bitstring.ToFecBitString(&colBitsrings)
-
+		fecBitString := bitstring.ToFecBitString(&colbitstrings)
+		fmt.Println(fecBitString)
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
 		// associate src packet row with this repair packet

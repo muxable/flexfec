@@ -1,5 +1,5 @@
 package util
-import "fmt"
+// import "fmt"
 
 func PadBitStrings(bitstrings *[][]byte, length int){
 	maxSize := -1

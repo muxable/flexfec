@@ -21,6 +21,10 @@ func SN_Missing(receivedBlock *[]rtp.Packet, SN_Sum int) int {
 }
 
 func MissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet, SN_missing int, fecvariant string) rtp.Packet {
+	fmt.Println("assoc len :", len(*receivedBlock))
+	for _, pkt := range *receivedBlock {
+		fmt.Println(util.PrintPkt(pkt))
+	}
 	ssrc := (*receivedBlock)[0].Header.SSRC
 	ssrcBuf := make([]byte, 4)
 	binary.BigEndian.PutUint32(ssrcBuf, ssrc)

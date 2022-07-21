@@ -51,7 +51,7 @@ func GenerateRTP(L int, D int) []rtp.Packet {
 			Payload: pkts[:endIndex],
 		}
 
-		if isExtension == 1 {
+		if isExtension == 10 {
 			packet.Header.Extension = true
 			packet.Header.ExtensionProfile = 0x1000
 			packet.Header.SetExtension(uint8(1), []byte{0xA5, 0x45})
