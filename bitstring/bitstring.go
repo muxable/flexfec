@@ -2,7 +2,6 @@ package bitstring
 
 import (
 	"encoding/binary"
-
 	"github.com/pion/rtp"
 )
 

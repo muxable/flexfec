@@ -172,11 +172,15 @@ func decoder() {
 			REPAIR_BUFFER=REPAIR_BUFFER[1:]
 
 			associatedSrcPackets := buffer.Extract(BUFFER, currRecPkt)
-			recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, currPkt)
+			recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, currRecPkt)
+			
 			if status==0{
 				fmt.Println("Recovered packet")
+				fmt.Println(util.PrintPkt(recoveredPacket))
+				
 				file.WriteString("Recovered PKt\n")
 				file.WriteString(util.PrintPkt(recoveredPacket))
+				
 				buffer.Update(BUFFER, recoveredPacket)
 			}else if status==-1{
 				fmt.Println("Recovery not possible\n")

@@ -28,10 +28,10 @@ func GetTestCaseMap(variant int) map[int]int {
 	}
 
 	/*
-		a  X  X  X r1   0 X  X  X
-		e  f  X  h r1   X 5  X  7
-		X  j  k  l r3   X 9 10 11
-		c1 c2 c3 c4
+		a  X  X  X r1   0 X  X  X |0
+		X  f  X  h r1   X 5  X  7 |1
+		X  j  k  l r3   X 9 10 11 |2
+		c1 c2 c3 c4		3 4  5  6 
 	*/
 
 	return map[int]int {
