@@ -45,20 +45,17 @@
     ├── printBytes.go
     ├── printRTP.go
     └── testCaseMap.go
-
+```
 
 
 ## Latest update
 Working flexFEC for LD version that can recover RTP packets
 with CSRC list and Extension header.
 
-- to run:
+to run:
 
 ```sh
- cd testing
-```
-
-```sh
+cd testing
 go run .\06_flexfec_testing.go
 ```
 
