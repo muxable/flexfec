@@ -21,6 +21,14 @@ const (
 	variant = 2
 )
 
+func printBuffer(repairBuffer []rtp.Packet) {
+	fmt.Print(string(Green), "REPAIR BUFFER : [ ")
+	for _, pkt := range repairBuffer {
+		fmt.Print(pkt.SequenceNumber, " ")
+	}
+	fmt.Println("]")
+}
+
 func testFlexFEC() {
 	file, err := os.Create("debug.txt")
 
@@ -44,17 +52,11 @@ func testFlexFEC() {
 	testcaseMap := util.GetTestCaseMap(variant)
 
 	for i := 0; i < len(srcBlock); i++ {
-		// fmt.Fprintln(file, bitsrings[i], len(bitsrings))
-		// fmt.Println("bit str ", bitsrings[i])
 		_, isPresent := testcaseMap[i]
 		if isPresent {
-			// fmt.Println(string(Green), "Sending a src packet")
-			// fmt.Println(util.PrintPkt(srcBlock[i]))
 			file.WriteString(util.PrintPkt(srcBlock[i]))
 			recievedPackets = append(recievedPackets, srcBlock[i])
 		} else {
-			// fmt.Println(string(Red), "missing packet")
-			// fmt.Println(util.PrintPkt(srcBlock[i]))
 			fmt.Fprintln(file, "missing packet")
 			file.WriteString(util.PrintPkt(srcBlock[i]))
 		}
@@ -74,27 +76,37 @@ func testFlexFEC() {
 				return buffer.CountMissing(BUFFER,REPAIR_BUFFER[i]) < buffer.CountMissing(BUFFER,REPAIR_BUFFER[j])
 			})
 
-			fmt.Println(REPAIR_BUFFER)
-	
+			// printing buffer
+			printBuffer(REPAIR_BUFFER)
+
 			currRecPkt := REPAIR_BUFFER[0]
 			REPAIR_BUFFER = REPAIR_BUFFER[1:]
 
 			associatedSrcPackets := buffer.Extract(BUFFER, currRecPkt)
 			recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, currRecPkt)
 			
-			if status==0{
-				fmt.Println(string(White),"Recovered packet")
+			if status == 1 {
+				fmt.Println(string(White), "Repair packet ", currRecPkt.SequenceNumber, " fully recovered")
+			} else if status == 0 {
+				fmt.Println(string(White), "Using repair packet ", currRecPkt.SequenceNumber, "to recover")
+				fmt.Println(string(Red), "Recovered packet")
 				fmt.Println(util.PrintPkt(recoveredPacket))
 				buffer.Update(BUFFER, recoveredPacket)
-			}else if status==-1{
-				fmt.Println("Recovery not possible\n")
+			} else if status == -1 {
+				fmt.Println(string(White), "Recovery not possible\n")
 				REPAIR_BUFFER=append(REPAIR_BUFFER,currRecPkt)
 				break
 			}
 		}
 	}
 
-	fmt.Println("Printing All the Packets form Buffer:", BUFFER)
+	// printing BUFFER
+	fmt.Println("\nPrinting All the Packets form Buffer:")
+	fmt.Print("REPAIR BUFFER : [ ")
+	for _, pkt := range BUFFER {
+		fmt.Print(pkt.SequenceNumber, " ")
+	}
+	fmt.Println("]\n")
 
 }
 

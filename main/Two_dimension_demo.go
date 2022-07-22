@@ -24,16 +24,17 @@ const (
 	Blue       = "\033[34m"
 )
 
+func printBuffer(repairBuffer []rtp.Packet) {
+	fmt.Print(string(Green), "REPAIR BUFFER : [ ")
+	for _, pkt := range repairBuffer {
+		fmt.Print(pkt.SequenceNumber, " ")
+	}
+	fmt.Println("]")
+}
+
 // Global variables
 var BUFFER map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
-// var BUFFER_REPAIR map[buffer.Key]rtp.Packet = make(map[buffer.Key]rtp.Packet)
 var REPAIR_BUFFER []rtp.Packet
-
-
-// var is_2d_row bool = false
-// var is_2d bool = false
-// var col_count uint8  = uint8(0)
-
 
 func encoder() {
 	serverAddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("127.0.0.1:%d", listenPort))
@@ -79,7 +80,7 @@ func encoder() {
 
 		testCaseMap := util.GetTestCaseMap(variant)
 
-		repairPackets := recover.GenerateRepairLD(&bitsrings, L, D, variant,SN_Base)
+		repairPackets := recover.GenerateRepairLD(&bitsrings, L, D, variant, SN_Base)
 
 		for i:= 0 ; i < len(srcBlock); i++ {
 			_, isPresent := testCaseMap[i]
@@ -87,30 +88,20 @@ func encoder() {
 				file.WriteString("Sending src block\n")
 				file.WriteString(util.PrintPkt(srcBlock[i]))
 
-				// fmt.Println(string(Green), "Sending src block")
-				// fmt.Println(util.PrintPkt(srcBlock[i]))
-	
 				buf, _ := srcBlock[i].Marshal()
 				conn.Write(buf)
 			} else {
 				file.WriteString("Missing Packet at sender end\n")
 				file.WriteString(util.PrintPkt(srcBlock[i]))
-
-				// fmt.Println(string(Red), "Missing Packet at sender end")
-				// fmt.Println(util.PrintPkt(srcBlock[i]))
 			}
 			time.Sleep(500 * time.Millisecond)
 		}
 	
 		
 		// sending repair packets, row first then column
-		// fmt.Println(string(Blue), "*** Sending repair pkts ***")
 		file.WriteString("*** Sending repair pkts ***\n")
 		for i := 0; i < len(repairPackets); i++ {
 			time.Sleep(500 * time.Millisecond)
-	
-			// fmt.Println(string(Blue), "Sending a repair packet")
-			// fmt.Println(util.PrintPkt(repairPackets[i]))
 
 			file.WriteString("Sending a repair packet\n")
 			file.WriteString(util.PrintPkt(repairPackets[i]))
@@ -140,9 +131,8 @@ func decoder() {
 		fmt.Println("file error")
 	}
 
-	conn.SetReadDeadline(time.Now().Add(20 * time.Second)) // stops reading after 25 seconds
+	conn.SetReadDeadline(time.Now().Add(20 * time.Second)) // stops reading after n seconds
 	
-	index:=0
 	for {
 		buf := make([]byte, mtu)
 		i, _, err := conn.ReadFrom(buf)
@@ -155,46 +145,50 @@ func decoder() {
 		currPkt.Unmarshal(buf[:i])
 	
 		if currPkt.SSRC == repairSSRC {
-			file.WriteString("Recieved Repair PKt\n")
+			file.WriteString("Recieved Repair Packet\n")
 			file.WriteString(util.PrintPkt(currPkt))
-			REPAIR_BUFFER=append(REPAIR_BUFFER,currPkt)
+			REPAIR_BUFFER = append(REPAIR_BUFFER,currPkt)
 		} else {
 			buffer.Update(BUFFER, currPkt)
 		}
 		
-		for len(REPAIR_BUFFER)>0{
-			fmt.Println("Iteration number:",index)
-			index+=1
+		for len(REPAIR_BUFFER) > 0{
 			sort.Slice(REPAIR_BUFFER, func(i, j int) bool {
 				return buffer.CountMissing(BUFFER,REPAIR_BUFFER[i]) < buffer.CountMissing(BUFFER,REPAIR_BUFFER[j])
 			})
+
+			// printing buffer
+			printBuffer(REPAIR_BUFFER)
+
 			currRecPkt:=REPAIR_BUFFER[0]
 			REPAIR_BUFFER=REPAIR_BUFFER[1:]
 
 			associatedSrcPackets := buffer.Extract(BUFFER, currRecPkt)
 			recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, currRecPkt)
-			
-			if status==0{
-				fmt.Println("Recovered packet")
-				fmt.Println(util.PrintPkt(recoveredPacket))
-				
-				file.WriteString("Recovered PKt\n")
+
+			if status == 1 {
+				fmt.Println(string(White), "Repair packet ", currRecPkt.SequenceNumber, " fully recovered")
+			} else if status == 0 {
+				fmt.Println(string(White), "Using repair packet ", currRecPkt.SequenceNumber, "to recover")
+				file.WriteString("Recovered Packet\n")
 				file.WriteString(util.PrintPkt(recoveredPacket))
-				
 				buffer.Update(BUFFER, recoveredPacket)
-			}else if status==-1{
-				fmt.Println("Recovery not possible\n")
+			} else if status == -1 {
+				fmt.Println(string(White), "Recovery not possible\n")
 				REPAIR_BUFFER=append(REPAIR_BUFFER,currRecPkt)
 				break
 			}
-
 		}
 	}
-	fmt.Println("Printing All the Packets form Buffer:", BUFFER)
 
 
-
-	
+	// printing BUFFER
+	fmt.Println("\nPrinting All the Packets form Buffer:")
+	fmt.Print("REPAIR BUFFER : [ ")
+	for _, pkt := range BUFFER {
+		fmt.Print(pkt.SequenceNumber, " ")
+	}
+	fmt.Println("]\n")
 }
 
 func main() {

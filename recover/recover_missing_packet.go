@@ -93,7 +93,7 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 
 	if lenReceivedBlock < length {
 		if (length - lenReceivedBlock) > 1 {
-			fmt.Println("retransmission required")
+			// fmt.Println("retransmission required")
 			return rtp.Packet{}, -1
 		}
 		// recovery
@@ -101,7 +101,7 @@ func RecoverMissingPacket(receivedBlock *[]rtp.Packet, repairPacket rtp.Packet) 
 	}
 
 	// successful,  No error
-	fmt.Println("All packets transmitted correctly")
+	// fmt.Println("All packets transmitted correctly")
 	return rtp.Packet{}, 1
 }
 

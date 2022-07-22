@@ -1,5 +1,5 @@
 package util
-import "fmt"
+// import "fmt"
 
 func PadBitStrings(bitstrings *[][]byte, length int){
 	maxSize := -1
@@ -14,7 +14,7 @@ func PadBitStrings(bitstrings *[][]byte, length int){
 
 	if maxSize < length {
 		maxSize = length
-		fmt.Println("-------------------------max length updated------------------")
+		// fmt.Println("-------------------------max length updated------------------")
 	}
 
 	for i := 0; i < n; i++ {
