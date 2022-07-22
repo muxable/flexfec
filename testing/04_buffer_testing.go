@@ -96,55 +96,55 @@ func test2() {
 	}
 }
 
-func test3() {
-	BUFFER := make(map[buffer.Key]rtp.Packet)
+// func test3() {
+// 	BUFFER := make(map[buffer.Key]rtp.Packet)
 
-	// sender
-	srcBlock := util.GenerateRTP(10, 10)
+// 	// sender
+// 	srcBlock := util.GenerateRTP(10, 10)
 
-	mask := uint16(36160)                         // 1000110101000000 16 bit 3,4,6,8
-	optionalmask1 := uint32(3229756930)           // 11000000100000100010111000000010 32 bit 15,22,28,32,34,35,36,44,
-	optionalmask2 := uint64(13871700391609118210) // 1100000010000010001011100000001011000000100000100010111000000010 64 bit 46,47,54,60,64,66,67,68,76,78,79,86,92,96,98,99
-	k1 := true
-	k2 := true
+// 	mask := uint16(36160)                         // 1000110101000000 16 bit 3,4,6,8
+// 	optionalmask1 := uint32(3229756930)           // 11000000100000100010111000000010 32 bit 15,22,28,32,34,35,36,44,
+// 	optionalmask2 := uint64(13871700391609118210) // 1100000010000010001011100000001011000000100000100010111000000010 64 bit 46,47,54,60,64,66,67,68,76,78,79,86,92,96,98,99
+// 	k1 := true
+// 	k2 := true
 
-	sn_base := srcBlock[0].Header.SequenceNumber
-	fmt.Println("sn base :", sn_base)
+// 	sn_base := srcBlock[0].Header.SequenceNumber
+// 	fmt.Println("sn base :", sn_base)
 
 
-	// creating dummy mask repair packet for buffer testing
-	fecheader := fech.NewFecHeaderFlexibleMask(false, false, false, false, 11, false, 56, 23434, 342334, sn_base, k1, mask, optionalmask1, k2, optionalmask2)
-	payload := []byte{12, 23, 34, 54}
+// 	// creating dummy mask repair packet for buffer testing
+// 	fecheader := fech.NewFecHeaderFlexibleMask(false, false, false, false, 11, false, 56, 23434, 342334, sn_base, k1, mask, optionalmask1, k2, optionalmask2)
+// 	payload := []byte{12, 23, 34, 54}
 
-	repairPacket := rtp.Packet{
-		Header: rtp.Header{
-			Version:        2,
-			Padding:        false,
-			Extension:      false,
-			Marker:         false,
-			PayloadType:    15,
-			SequenceNumber: 23433,
-			Timestamp:      54243243,
-			SSRC:           2343244,
-			CSRC:           []uint32{},
-		},
-		Payload: append(fecheader.Marshal(), payload...),
-	}
+// 	repairPacket := rtp.Packet{
+// 		Header: rtp.Header{
+// 			Version:        2,
+// 			Padding:        false,
+// 			Extension:      false,
+// 			Marker:         false,
+// 			PayloadType:    15,
+// 			SequenceNumber: 23433,
+// 			Timestamp:      54243243,
+// 			SSRC:           2343244,
+// 			CSRC:           []uint32{},
+// 		},
+// 		Payload: append(fecheader.Marshal(), payload...),
+// 	}
 
-	// receiver
+// 	// receiver
 
-	for _, pkt := range srcBlock {
-		buffer.Update(BUFFER, pkt)
-	}
+// 	for _, pkt := range srcBlock {
+// 		buffer.Update(BUFFER, pkt)
+// 	}
 
-	// Extracting protected packets by looking at the mask
-	associatedPkts := buffer.ExtractMask(BUFFER, repairPacket)
-	for index, pkt := range associatedPkts {
-		fmt.Println("index : ", index)
-		fmt.Println(util.PrintPkt(pkt))
-	}
+// 	// Extracting protected packets by looking at the mask
+// 	associatedPkts := buffer.ExtractMask(BUFFER, repairPacket)
+// 	for index, pkt := range associatedPkts {
+// 		fmt.Println("index : ", index)
+// 		fmt.Println(util.PrintPkt(pkt))
+// 	}
 
-}
+// }
 
 
 func main() {

@@ -17,7 +17,7 @@ func NewRepairPacketFlex(seqnum uint16, fecheader fech.FecHeaderFlexibleMask, re
 	repairPacket := rtp.Packet{
 		Header: rtp.Header{
 			Version:        2,
-			Padding:        true,
+			Padding:        false,
 			Extension:      false,
 			Marker:         false,
 			PayloadType:    15,
@@ -36,7 +36,7 @@ func NewRepairPacketLD(seqnum uint16, fecheader fech.FecHeaderLD, repairPayload 
 	repairPacket := rtp.Packet{
 		Header: rtp.Header{
 			Version:        2,
-			Padding:        true,
+			Padding:        false,
 			Extension:      false,
 			Marker:         false,
 			PayloadType:    15,
@@ -134,43 +134,26 @@ func GenerateRepairLD(srcBlkBitstrs *[][]byte, L, D int, variant int, SN_Base ui
 
 	return repairPackets
 
-	// if L == 0 && D == 0 {
-	// 	fmt.Println("ignore : future use only")
-	// 	// return repairPackets
-	// } else if L > 0 && D == 0 {
-	// 	repairPackets = GenerateRepairRowFec(srcBlock, L, false)
-	// 	// return repairPackets
-	// } else if L > 0 && D == 1 {
-	// 	rowRepairPackets, colRepairPackets := GenerateRepair2dFec(srcBlock, L, D)
-	// 	repairPackets = append(rowRepairPackets, colRepairPackets...)
-	// 	// return append(rowRepairPackets, colRepairPackets...)
-	// } else if L > 0 && D > 1 {
-	// 	repairPackets = GenerateRepairColFec(srcBlock, L, D)
-	// 	// return repairPackets
-	// } else {
-	// 	fmt.Println("NOT POSSIble")
-	// 	// return repairPackets
-	// }
-
-	// return repairPackets
-
 }
 
 // L>0 , D=0
 func GenerateRepairRowFec(srcBlkBitstrs *[][]byte, L int, is2D bool, SN_Base uint16) []rtp.Packet {
-
+	// src [[b0], [b1],........ [b11]]
 	var repairPackets []rtp.Packet
+	size := len((*srcBlkBitstrs)[0])
 
 	// seqnum := uint16(rand.Intn(65535 - L))
 
 	for i := 0; i < len(*srcBlkBitstrs); i += L {
-		// packets := (*srcBlock)[i : i+L]
-		// rowBitstrings := getBlockBitstring(packets)
-
-		rowBitstrings := (*srcBlkBitstrs)[i : i+L]
-		fecBitString := bitstring.ToFecBitString(&rowBitstrings)
+		rowBitstrings := make([][]byte, L)
+		for j := 0; j < L; j++ {
+			rowBitstrings[j] = make([]byte, size)
+			copy(rowBitstrings[j], (*srcBlkBitstrs)[i + j])
+		}
+		
+		fecBitString := bitstring.ToFecBitString(rowBitstrings)
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
-
+		
 		// associate src packet row with this repair packet
 		fecheader.SN_base = SN_Base + uint16(i)
 		fecheader.L = uint8(L)
@@ -180,7 +163,6 @@ func GenerateRepairRowFec(srcBlkBitstrs *[][]byte, L int, is2D bool, SN_Base uin
 		}
 
 		repairPacket := NewRepairPacketLD(seqnum, fecheader, repairPayload)
-
 		repairPackets = append(repairPackets, repairPacket)
 		seqnum++
 	}
@@ -196,22 +178,16 @@ func GenerateRepairColFec(srcBlkBitstrs *[][]byte, L, D int, SN_Base uint16) []r
 	// L = 0 col bitstrings = [[b0], [b4], [b8]]
 
 	// seqnum := uint16(rand.Intn(65535 - L))
-	// fmt.Println("source blk : ",)
-	// for i, b := range *srcBlkBitstrs {
-	// 	fmt.Println(i, b)
-	// }
-	// fmt.Println()
 	size := len((*srcBlkBitstrs)[0])
 
-	for j := 0; j < L; j++ { // 4
+	for j := 0; j < L; j++ { 
 		colbitstrings := make([][]byte, D)
-		for i := 0; i < D; i++ { // 3
+		for i := 0; i < D; i++ { 
 			colbitstrings[i] = make([]byte, size)
 			copy(colbitstrings[i], (*srcBlkBitstrs)[i*L+j])
 		}
 
-		fecBitString := bitstring.ToFecBitString(&colbitstrings)
-		fmt.Println(fecBitString)
+		fecBitString := bitstring.ToFecBitString(colbitstrings)
 		fecheader, repairPayload := fech.ToFecHeaderLD(fecBitString)
 
 		// associate src packet row with this repair packet
@@ -220,7 +196,6 @@ func GenerateRepairColFec(srcBlkBitstrs *[][]byte, L, D int, SN_Base uint16) []r
 		fecheader.D = uint8(D)
 
 		repairPacket := NewRepairPacketLD(seqnum, fecheader, repairPayload)
-
 		repairPackets = append(repairPackets, repairPacket)
 		seqnum++
 	}
@@ -229,7 +204,6 @@ func GenerateRepairColFec(srcBlkBitstrs *[][]byte, L, D int, SN_Base uint16) []r
 }
 
 func GenerateRepair2dFec(srcBlkBitstrs *[][]byte, L, D int, SN_Base uint16) []rtp.Packet {
-
 	is2D := true
 	rowRepairPackets := GenerateRepairRowFec(srcBlkBitstrs, L, is2D, SN_Base)
 	colRepairPackets := GenerateRepairColFec(srcBlkBitstrs, L, D, SN_Base)
