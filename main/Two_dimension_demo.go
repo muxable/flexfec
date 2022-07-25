@@ -1,15 +1,16 @@
 package main
 
 import (
-	"os"
-	"fmt"
-	"net"
-	"sort"
-	"time"
 	"flexfec/bitstring"
-	"flexfec/util"
 	"flexfec/buffer"
 	"flexfec/recover"
+	"flexfec/util"
+	"fmt"
+	"net"
+	"os"
+	"sort"
+	"time"
+
 	"github.com/pion/rtp"
 )
 
@@ -54,7 +55,7 @@ func encoder() {
 	}
 
 	// generate packets
-	stream := util.GenerateRTP(10, 10); 
+	stream := util.GenerateRTP(10, 10)
 
 	// test case list
 	// variant 0 -> row, 1 -> col, 2 -> 2D
@@ -70,7 +71,7 @@ func encoder() {
 		D := item[1]
 		variant := item[2]
 
-		srcBlock := stream[index : index + L * D]
+		srcBlock := stream[index : index+L*D]
 		SN_Base := uint16(srcBlock[0].Header.SequenceNumber)
 
 		bitsrings := bitstring.GetBlockBitstring(&srcBlock)
@@ -82,7 +83,7 @@ func encoder() {
 
 		repairPackets := recover.GenerateRepairLD(&bitsrings, L, D, variant, SN_Base)
 
-		for i:= 0 ; i < len(srcBlock); i++ {
+		for i := 0; i < len(srcBlock); i++ {
 			_, isPresent := testCaseMap[i]
 			if isPresent {
 				file.WriteString("Sending src block\n")
@@ -96,8 +97,7 @@ func encoder() {
 			}
 			time.Sleep(500 * time.Millisecond)
 		}
-	
-		
+
 		// sending repair packets, row first then column
 		file.WriteString("*** Sending repair pkts ***\n")
 		for i := 0; i < len(repairPackets); i++ {
@@ -132,7 +132,7 @@ func decoder() {
 	}
 
 	conn.SetReadDeadline(time.Now().Add(20 * time.Second)) // stops reading after n seconds
-	
+
 	for {
 		buf := make([]byte, mtu)
 		i, _, err := conn.ReadFrom(buf)
@@ -143,25 +143,25 @@ func decoder() {
 
 		currPkt := rtp.Packet{}
 		currPkt.Unmarshal(buf[:i])
-	
+
 		if currPkt.SSRC == repairSSRC {
 			file.WriteString("Recieved Repair Packet\n")
 			file.WriteString(util.PrintPkt(currPkt))
-			REPAIR_BUFFER = append(REPAIR_BUFFER,currPkt)
+			REPAIR_BUFFER = append(REPAIR_BUFFER, currPkt)
 		} else {
 			buffer.Update(BUFFER, currPkt)
 		}
-		
-		for len(REPAIR_BUFFER) > 0{
+
+		for len(REPAIR_BUFFER) > 0 {
 			sort.Slice(REPAIR_BUFFER, func(i, j int) bool {
-				return buffer.CountMissing(BUFFER,REPAIR_BUFFER[i]) < buffer.CountMissing(BUFFER,REPAIR_BUFFER[j])
+				return buffer.CountMissing(BUFFER, REPAIR_BUFFER[i]) < buffer.CountMissing(BUFFER, REPAIR_BUFFER[j])
 			})
 
 			// printing buffer
 			printBuffer(REPAIR_BUFFER)
 
-			currRecPkt:=REPAIR_BUFFER[0]
-			REPAIR_BUFFER=REPAIR_BUFFER[1:]
+			currRecPkt := REPAIR_BUFFER[0]
+			REPAIR_BUFFER = REPAIR_BUFFER[1:]
 
 			associatedSrcPackets := buffer.Extract(BUFFER, currRecPkt)
 			recoveredPacket, status := recover.RecoverMissingPacket(&associatedSrcPackets, currRecPkt)
@@ -175,12 +175,11 @@ func decoder() {
 				buffer.Update(BUFFER, recoveredPacket)
 			} else if status == -1 {
 				fmt.Println(string(White), "Recovery not possible\n")
-				REPAIR_BUFFER=append(REPAIR_BUFFER,currRecPkt)
+				REPAIR_BUFFER = append(REPAIR_BUFFER, currRecPkt)
 				break
 			}
 		}
 	}
-
 
 	// printing BUFFER
 	fmt.Println("\nPrinting All the Packets form Buffer:")
@@ -195,6 +194,3 @@ func main() {
 	go encoder()
 	decoder()
 }
-
-
-

@@ -1,156 +1,65 @@
-Recieved Repair PKt
+Recieved Repair Packet
 Header : {2 false false false 15 20000 54243243 2868272638 [] 0 []}
-Payload : [64 0 0 0 0 0 0 0 39 16 4 1 0 0 0 143 217 194 147 218 28 100 0 0 0 0 0 0 0 0 0 0 0 0 0 25]
+Payload : [86 0 0 16 0 0 0 0 39 16 4 1 0 0 0 0 0 0 0 0 16 0 0 134 1 2 165 0 109 29 20 51 155 3 204 204 204 0 0 0 144 224 105 143 217 194 147 218 28 100 39 0 0 0 0]
 PaddingSize : 0
 
-First round of row recovery
-Length of associatedSrcPackets:1
-Recieved Repair PKt
+Recieved Repair Packet
 Header : {2 false false false 15 20001 54243243 2868272638 [] 0 []}
-Payload : [64 0 0 0 0 0 0 0 39 20 4 1 144 224 105 143 217 194 147 218 28 100 39 0 0 0 0 0 0 0 0 0 0 0 0 27]
+Payload : [64 0 0 36 0 0 0 0 39 20 4 1 128 224 105 139 216 192 165 69 2 2 187 204 131 227 165 71 20 192 54 159 30 102 156 204 3 3 204 204 204 0 0 0 144 224 105 143 217 194 147 218 28 0 0]
 PaddingSize : 0
 
-First round of row recovery
-Length of associatedSrcPackets:2
-Recieved Repair PKt
+Recieved Repair Packet
 Header : {2 false false false 15 20002 54243243 2868272638 [] 0 []}
-Payload : [64 0 0 0 0 0 0 0 39 24 4 1 0 0 0 0 0 0 0 0 28 100 39 130 69 177 52 241 255 255 175 0 0 0 0 11]
+Payload : [84 0 0 50 0 0 0 0 39 24 4 1 16 0 0 96 1 2 165 98 2 2 187 78 3 3 204 137 204 0 0 0 144 224 105 143 217 194 147 218 28 100 39 0 0 0 0 0 0 0 52 241 255 255 175]
 PaddingSize : 0
 
-First round of row recovery
-*** Recovered Packet ***
-Header : {2 true false false 15 10008 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 28 100 39 130 69 177 52 241 255 255 175 0 0 0 0]
-PaddingSize : 4
-
-Length of associatedSrcPackets:3
-Recieved Repair PKt
+Recieved Repair Packet
 Header : {2 false false false 15 20003 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 16 4 3 0 0 0 143 217 194 147 218 28 100 39 130 69 177 52 241 255 255 175 0 0 0 0 7]
+Payload : [65 15 0 14 3 59 175 171 39 16 4 3 128 224 105 239 200 192 54 155 31 100 57 11 68 176 67 241 207 3 204 204 204 0 0 0 144 224 105 143 217 194 147 218 28 100 39 130 69 177 0 0 0 0 0]
 PaddingSize : 0
 
-*** Recovered Packet ***
-Header : {2 true false false 15 10004 54243243 2190023291 [] 0 []}
-Payload : [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 23
+Recovered Packet
+Header : {2 false false false 15 10000 54243243 3304455343 [] 0 []}
+Payload : [144 224 105 143 217 194 147 218 28 100 39 130 69 177 52 241]
+PaddingSize : 0
 
-Length of associatedSrcPackets:2
-Recieved Repair PKt
+Recovered Packet
+Header : {2 false false false 15 10001 54243243 3304455343 [100 39 130 69] 0 []}
+Payload : [144 224]
+PaddingSize : 0
+
+Recieved Repair Packet
 Header : {2 false false false 15 20004 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 17 4 3 144 224 105 143 217 194 0 0 28 100 39 130 69 177 52 241 255 255 175 255 0 0 0 29]
+Payload : [83 15 0 55 3 59 175 171 39 17 4 3 0 0 0 100 0 0 0 39 0 0 0 130 16 0 0 4 145 226 165 69 2 2 187 204 3 3 204 204 204 0 0 0 144 224 105 143 217 194 147 218 28 0 0]
 PaddingSize : 0
 
-*** Recovered Packet ***
-Header : {2 true false false 15 10001 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 17
+Recovered Packet
+Header : {2 false true false 15 10005 54243243 3304455343 [100 39 130] 4096 [{1 [165 69]} {2 [187 204]} {3 [204 204 204]}]}
+Payload : [144 224 105 143 217 194 147 218 28]
+PaddingSize : 0
 
-Length of associatedSrcPackets:2
-Recieved Repair PKt
+Recovered Packet
+Header : {2 false false false 15 10006 54243243 3304455343 [] 0 []}
+Payload : [144 224 105 143 217 194]
+PaddingSize : 0
+
+Recieved Repair Packet
 Header : {2 false false false 15 20005 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 18 4 3 144 224 0 0 0 0 0 0 0 0 39 0 0 0 0 0 0 0 0 0 0 0 0 20]
+Payload : [81 15 0 4 3 59 175 171 39 18 4 3 0 0 0 100 16 0 147 222 29 102 130 199 71 179 143 61 252 252 99 51 84 0 0 0 144 224 105 143 217 194 147 218 28 100 39 130 69 177 52 241 255 255 175]
 PaddingSize : 0
 
-Length of associatedSrcPackets:1
-Recieved Repair PKt
+Recovered Packet
+Header : {2 false true false 15 10010 54243243 3304455343 [100] 4096 [{1 [165 69]} {2 [187 204]} {3 [204 204 204]}]}
+Payload : [144 224 105 143 217 194 147 218 28 100 39 130 69 177 52 241 255 255 175]
+PaddingSize : 0
+
+Recovered Packet
+Header : {2 false true false 15 10011 54243243 3304455343 [] 4096 [{1 [165 69]} {2 [187 204]} {3 [204 204 204]}]}
+Payload : [144 224 105 143 217 194 147 218 28 100 39]
+PaddingSize : 0
+
+Recieved Repair Packet
 Header : {2 false false false 15 20006 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 19 4 3 144 224 0 0 0 0 147 218 28 100 39 130 69 177 52 241 255 255 175 255 0 0 0 7]
+Payload : [65 15 0 59 3 59 175 171 39 19 4 3 16 0 0 4 1 2 165 69 18 2 187 74 146 225 0 6 23 192 40 22 143 135 130 67 21 194 147 218 140 132 78 143 217 194 147 218 28 100 39 0 0 0 0]
 PaddingSize : 0
 
-*** Recovered Packet ***
-Header : {2 true false false 15 10003 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 17
-
-Length of associatedSrcPackets:2
-Second round of row recovery
-*** Recovered Packet ***
-Header : {2 true false false 15 10002 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 28 100 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 13
-
-Length of associatedSrcPackets:3
-*** Recovered Packet ***
-Header : {2 true false false 15 10006 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 28 100 39 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 12
-
-Length of associatedSrcPackets:3
-Length of associatedSrcPackets:4
-Recieved Repair PKt
-Header : {2 false false false 15 20007 54243243 2868272638 [] 0 []}
-Payload : [64 0 0 0 0 0 0 0 39 28 4 0 144 224 105 0 0 0 0 0 0 0 0 0 0 0 0 0 0 255 175 255 152 54 0 4]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10015 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 20
-
-Length of associatedSrcPackets:3
-Recieved Repair PKt
-Header : {2 false false false 15 20008 54243243 2868272638 [] 0 []}
-Payload : [64 0 0 0 0 0 0 0 39 32 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 255 0 0 0 7]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10018 54243243 2190023291 [] 0 []}
-Payload : [144 224 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 21
-
-Length of associatedSrcPackets:3
-Recieved Repair PKt
-Header : {2 false false false 15 20009 54243243 2868272638 [] 0 []}
-Payload : [64 0 0 0 0 0 0 0 39 36 4 0 0 0 0 0 0 0 0 218 28 100 39 130 69 177 52 241 255 255 175 255 152 54 0 17]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10020 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 28 100 39 130 69 177 52 241 255 255 175 255 152 54 0]
-PaddingSize : 1
-
-Length of associatedSrcPackets:3
-Recieved Repair PKt
-Header : {2 false false false 15 20010 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 40 4 3 144 224 105 143 217 194 147 218 28 0 0 0 0 0 0 0 0 0 0 0 0 0 0 14]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10032 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 15
-
-Length of associatedSrcPackets:2
-Recieved Repair PKt
-Header : {2 false false false 15 20011 54243243 2868272638 [] 0 []}
-Payload : [64 15 0 23 3 59 175 171 39 41 4 3 144 224 0 0 0 0 0 0 0 0 0 0 0 177 52 241 255 255 175 255 152 54 190 31]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10025 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 28 100 39 130 69 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 10
-
-Length of associatedSrcPackets:2
-Recieved Repair PKt
-Header : {2 false false false 15 20012 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 42 4 3 144 224 105 143 217 0 0 0 0 0 0 0 0 0 0 0 0 0 0 255 152 0 0 20]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10034 54243243 2190023291 [] 0 []}
-Payload : [144 224 105 143 217 194 147 218 28 100 39 130 69 177 52 241 255 255 175 255 152 0 0]
-PaddingSize : 2
-
-Length of associatedSrcPackets:2
-Recieved Repair PKt
-Header : {2 false false false 15 20013 54243243 2868272638 [] 0 []}
-Payload : [96 15 0 23 3 59 175 171 39 43 4 3 144 0 0 0 217 194 147 218 28 100 39 130 69 0 0 0 0 0 0 0 0 0 0 15]
-PaddingSize : 0
-
-*** Recovered Packet ***
-Header : {2 true false false 15 10027 54243243 2190023291 [] 0 []}
-Payload : [144 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-PaddingSize : 22
-
-Length of associatedSrcPackets:2
